@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_PATH: /app/data/kasanie.sqlite
+    volumes:
+      - kasanie-data:/app/data
+    restart: unless-stopped
+volumes:
+  kasanie-data:

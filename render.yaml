@@ -1,0 +1,16 @@
+# Trial deployment: free Render services use an ephemeral filesystem.
+# For real user data use a persistent disk or a server with durable storage.
+services:
+  - type: web
+    name: kasanie-football
+    runtime: docker
+    repo: https://github.com/krasikovaanna1303-afk/myfootballapp
+    branch: codex/kasanie-web
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /app/data/kasanie.sqlite
