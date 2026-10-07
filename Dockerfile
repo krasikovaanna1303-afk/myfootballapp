@@ -1,7 +1,10 @@
 FROM node:24-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+RUN --mount=type=secret,id=proxy_ca \
+    set -eu; \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    npm ci --no-audit --no-fund
 COPY index.html vite.config.js ./
 COPY src ./src
 COPY public ./public
@@ -13,7 +16,10 @@ ENV NODE_ENV=production \
     DATABASE_PATH=/app/data/kasanie.sqlite
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --no-audit --no-fund \
+RUN --mount=type=secret,id=proxy_ca \
+    set -eu; \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    npm ci --omit=dev --no-audit --no-fund \
     && npm cache clean --force \
     && mkdir -p /app/data \
     && chown node:node /app/data
