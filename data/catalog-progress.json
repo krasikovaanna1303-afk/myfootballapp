@@ -1,4 +1,72 @@
 {
-  "next_index": 0,
-  "checked": {}
+  "next_index": 14,
+  "checked": {
+    "Санкт-Петербург": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 2436,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Москва": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "error": "The read operation timed out"
+    },
+    "Казань": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 534,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Нижний Новгород": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 417,
+      "server": "https://overpass.private.coffee/api/interpreter"
+    },
+    "Екатеринбург": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 836,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Новосибирск": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 479,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Самара": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 461,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Краснодар": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "error": "The read operation timed out"
+    },
+    "Ростов-на-Дону": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "error": "The read operation timed out"
+    },
+    "Уфа": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 304,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Челябинск": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 1124,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Пермь": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 330,
+      "server": "https://overpass.kumi.systems/api/interpreter"
+    },
+    "Омск": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 586,
+      "server": "https://overpass.private.coffee/api/interpreter"
+    },
+    "Воронеж": {
+      "time": "2026-10-29T18:16:39+00:00",
+      "features": 398,
+      "server": "https://overpass-api.de/api/interpreter"
+    }
+  }
 }
