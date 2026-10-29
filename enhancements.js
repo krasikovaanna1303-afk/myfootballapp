@@ -56,6 +56,7 @@ if (cityForm) cityForm.addEventListener('submit',async event => {
 });
 const status = f => {
   if (f.access==='private')return {name:'Доступ ограничен',key:'private'};
+  if (f.school && !f.schoolAccessVerified)return {name:'Школьная · условия прохода уточни',key:'unknown'};
   if (f.access==='free')return {name:f.custom?'Бесплатно · по словам игрока':f.sourceVerified?'Бесплатно по условиям источника':'Бесплатно и доступно по OSM · проверь',key:'free'};
   if (f.access==='free_tag')return {name:'Без платы по OSM · доступ не подтверждён',key:'free'};
   if (f.access==='paid'||f.paid===true)return {name:'Платная · условия уточни',key:'paid'};
@@ -80,6 +81,7 @@ function fieldHTML(f){
     '<span class="tag">'+E(f.surface||'Покрытие не указано')+'</span>',
     f.lit===true?'<span class="tag">💡 Есть освещение</span>':'',
     f.sourceVerified?'<span class="tag">🔗 Есть источник</span>':'',
+    f.school?'<span class="tag">🏫 Школьная площадка</span>':'',
     f.custom?'<span class="tag">Добавлено игроком</span>':'',
     f.potential?'<span class="tag candidate">⚠ Не подтверждено для футбола</span>':'<span class="tag">⚽ Футбольный объект</span>'
   ].join('');
@@ -94,7 +96,7 @@ renderFields=function(){
   const countAll=visible.length, confirmed=visible.filter(f=>!f.potential).length;
   const filtered=visible.filter(f=>(allowPotential||!f.potential) && [f.name,f.city,f.address].join(' ').toLowerCase().includes(q) &&
     (filter==='all' || (filter==='free' && status(f).key==='free') || (filter==='paid' && status(f).key==='paid') ||
-     (filter==='lit' && f.lit===true) || (filter==='unknown' && status(f).key==='unknown')));
+     (filter==='lit' && f.lit===true) || (filter==='school' && f.school===true) || (filter==='unknown' && status(f).key==='unknown')));
   const weight=f=>(status(f).key==='free'?0:status(f).key==='unknown'?1:2)+(f.potential?3:0);
   filtered.sort((a,b)=>weight(a)-weight(b));
   document.querySelector('#count').textContent=filtered.length+' найдено · '+confirmed+' футбол · '+countAll+' всего в области';
@@ -120,7 +122,8 @@ window.showField=function(id){
   const s=status(f),link=safeOsmLink(f);
   modal(f.name,'<p>'+E(f.address||f.city||'')+'</p><div class="tags"><span class="tag">'+E(s.name)+'</span><span class="tag">'+E(f.surface||'Покрытие неизвестно')+'</span><span class="tag">'+(f.lit?'💡 Освещение есть':'Освещение не подтверждено')+'</span></div><p>'+E(f.description||'')+'</p>'+
     (link?'<p><a href="'+E(link)+'" target="_blank" rel="noopener noreferrer">Источник сведений ↗</a></p>':'<p class="notice">Данные добавлены пользователем, независимо не подтверждены.</p>')+
-    '<p class="notice">'+(f.potential?'Это универсальная или дворовая спортплощадка: наличие футбольных ворот и возможность играть не подтверждены. ':'')+'Проверь доступность, аренду и безопасность перед игрой. Открытая карта не гарантирует разрешение на посещение.</p>'+
+    '<p><a href="https://yandex.ru/maps/?ll='+encodeURIComponent(Number(f.lon)+','+Number(f.lat))+'&z=17" target="_blank" rel="noopener noreferrer">Проверить местоположение в Яндекс Картах ↗</a></p>'+
+    '<p class="notice">'+(f.potential?'Это универсальная или дворовая спортплощадка: наличие футбольных ворот и возможность играть не подтверждены. ':'')+(f.school?'Для школьной территории необходима проверка правил посещения у администрации. ':'')+'Проверь доступность, аренду и безопасность перед игрой. Открытая карта не гарантирует разрешение на посещение.</p>'+
     '<h3>Отзывы</h3>'+((f.reviews||[]).map(r=>'<p>⭐ '+E(r.rating)+'/5 · <b>'+E(r.author)+'</b><br>'+E(r.text)+'</p>').join('')||'<p>Пока нет отзывов</p>')+
     '<button class="primary" id="field-game">Создать здесь игру</button> '+(f.custom?'<button class="secondary" id="field-review">Оставить отзыв</button>':''));
   document.querySelector('#field-game').onclick=()=>{
@@ -156,40 +159,42 @@ function infoState(message){
   const e=document.querySelector('#field-data-state');if(e)e.textContent=message;
 }
 function geoEntry(x){
-  const t=x.tags||{};
-  const lat=Number(x.lat??x.center?.lat),lon=Number(x.lon??x.center?.lon);
+  const t=x.tags||{},lat=Number(x.lat??x.center?.lat),lon=Number(x.lon??x.center?.lon);
   if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
-  const a=t.access||'';
-  const forbidden=['private','no','customers','permit'].includes(a);
-  const sport=String(t.sport||'').toLowerCase();
-  const name=String(t.name||'');
-  const soccer=/soccer|futsal|mini_soccer|association_football|футбол/.test(sport) || /футбол|soccer|mini.football/i.test(name);
-  const potential=!soccer;
-  // Поле sport=multi либо без указания спорта: гипотеза, а не достоверная футбольная площадка.
-  // fee=no без явного access=yes также не означает гарантированный проход.
-  let access=forbidden?'private':t.fee==='yes'?'paid':
-    t.fee==='no'?(['yes','public','permissive'].includes(a)?'free':'free_tag'):'unknown';
-  const labels=[t['addr:street'],t['addr:housenumber']].filter(Boolean);
+  const sport=String(t.sport||'').toLowerCase(),name=String(t.name||'');
+  const school=t.amenity==='school'||t['operator:type']==='school'||t.school!=null||
+    /(?:^|\s)(?:школа|лицей|гимназия|гбоу|school)(?:\s|$)/i.test(name);
+  const soccer=/soccer|futsal|mini_soccer|football/.test(sport)||/футбол|soccer|mini.football/i.test(name);
+  const potential=!soccer||t.amenity==='school';
+  const a=String(t.access||'');
+  const restricted=['no','private','customers','permit'].includes(a);
+  const open=['yes','public','permissive'].includes(a);
+  let access=restricted?'private':t.fee==='yes'?'paid':t.fee==='no'?(open?'free':'free_tag'):'unknown';
+  if(school&&!restricted&&t.fee!=='yes')access='unknown';
   return {
     id:'osm-'+x.type+'-'+x.id,
-    name:name || (potential?'Спортплощадка — уточнить футбол':'Футбольная площадка'),
-    city:t['addr:city']||'', address:labels.join(', '),
+    name:name||(school?'Школьная спортплощадка — уточнить футбол':potential?'Спортплощадка — уточнить футбол':'Футбольная площадка'),
+    city:t['addr:city']||'',address:[t['addr:street'],t['addr:housenumber']].filter(Boolean).join(', '),
     lat,lon,lit:t.lit==='yes'?true:t.lit==='no'?false:null,
-    surface:t.surface||'Не указано',
+    surface:t.surface||'Не указано',school,schoolAccessVerified:false,
     paid:t.fee==='yes'?true:t.fee==='no'?false:null,access,potential,
-    description:(potential?'Универсальная/дворовая спортивная площадка (футбол не указан). ':'')+
-      'Метка OpenStreetMap. Тип поля, свободный вход, ворота, часы и состояние требуют проверки.',
-    source:'https://www.openstreetmap.org/'+x.type+'/'+x.id,
-    reviews:[]
+    description:(school?'Школьная территория: уточняйте правила посещения. ':'')+
+      (potential?'Возможность играть в футбол ещё не подтверждена. ':'')+
+      'Метка OpenStreetMap. Доступ, часы работы, тип поля и состояние требуют проверки.',
+    source:'https://www.openstreetmap.org/'+x.type+'/'+x.id,reviews:[]
   };
 }
 function osmQuery(bbox){
   const B='('+bbox+')';
   return '[out:json][timeout:30];('+
     'nwr["leisure"="pitch"]["sport"~"soccer|futsal|mini_soccer|football",i]'+B+';'+
-    'nwr["leisure"="practice_pitch"]["sport"~"soccer|futsal",i]'+B+';'+
-    'nwr["leisure"="sports_centre"]["sport"~"soccer|futsal",i]'+B+';'+
-    'nwr["leisure"="stadium"]["sport"~"soccer|futsal",i]'+B+';'+
+    'nwr["leisure"="practice_pitch"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="sports_centre"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="sports_hall"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="stadium"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="playground"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["amenity"="school"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="pitch"]["name"~"футбол|football|soccer",i]'+B+';'+
     'nwr["leisure"="pitch"]["sport"="multi"]'+B+';'+
     'nwr["leisure"="pitch"][!"sport"]'+B+';'+
   ');out center 5000;';
@@ -253,7 +258,7 @@ loadOSM=async function(){
 };
 const filter=document.querySelector('#filter');
 if(filter){
-  filter.innerHTML='<option value="all">Все площадки</option><option value="free">🟢 Отмечены бесплатными</option><option value="unknown">Доступ не уточнён</option><option value="paid">Платные</option><option value="lit">С освещением</option>';
+  filter.innerHTML='<option value="all">Все площадки</option><option value="free">🟢 Отмечены бесплатными</option><option value="unknown">Доступ не уточнён</option><option value="paid">Платные</option><option value="lit">С освещением</option><option value="school">🏫 Школьные</option>';
   filter.value='all';
 }
 document.querySelector('#search').placeholder='Название поля, район или адрес';
