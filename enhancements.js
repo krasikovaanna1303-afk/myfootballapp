@@ -1,7 +1,7 @@
 /* ПОЛЕ — карта России, статусы доступа и анкеты. Без сервера общие игры пока недоступны. */
 (() => {
 'use strict';
-const seed = (window.POLE_SEED_FIELDS || []).map(f => ({...f, sourceVerified:true, access:'paid'}));
+const seed = (window.POLE_SEED_FIELDS || []).map(f => ({...f, sourceVerified:!!f.source, access:f.access || (f.paid===true?'paid':'unknown')}));
 const config = window.POLE_SUPABASE || {};
 const backend = !!(config.url && config.anonKey && window.supabase?.createClient);
 const sb = backend ? window.supabase.createClient(config.url, config.anonKey) : null;
