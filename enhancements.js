@@ -63,9 +63,15 @@ const status = f => {
   if (f.custom && f.paid===false)return {name:'Бесплатно · по словам автора',key:'free'};
   return {name:'Условия доступа неизвестны',key:'unknown'};
 };
+const staticData=window.POLE_CATALOG_METADATA||{};
+const permanentCount=(window.POLE_PERMANENT_FIELDS||[]).length;
+const stat=document.querySelector('#catalog-stat');
+if(stat) stat.textContent=permanentCount?
+  'В постоянном каталоге '+permanentCount.toLocaleString('ru-RU')+' площадок из '+(staticData.checked_cities||'?')+' обследованных населённых пунктов. Ещё поля загружаются с карты.':
+  'Постоянный каталог готовится; сейчас показываются исходные карточки и живые данные OpenStreetMap.';
 const allFields=()=>{
   const byId=new Map();
-  for(const f of [...osm,...seed,...fields]){
+  for(const f of [...osm,...(window.POLE_PERMANENT_FIELDS||[]),...seed,...fields]){
     if(Number.isFinite(Number(f.lat))&&Number.isFinite(Number(f.lon)))byId.set(String(f.id),f);
   }
   return [...byId.values()];
@@ -99,7 +105,7 @@ renderFields=function(){
      (filter==='lit' && f.lit===true) || (filter==='school' && f.school===true) || (filter==='unknown' && status(f).key==='unknown')));
   const weight=f=>(status(f).key==='free'?0:status(f).key==='unknown'?1:2)+(f.potential?3:0);
   filtered.sort((a,b)=>weight(a)-weight(b));
-  document.querySelector('#count').textContent=filtered.length+' найдено · '+confirmed+' футбол · '+countAll+' всего в области';
+  document.querySelector('#count').textContent=filtered.length+' в области · '+confirmed+' футбольных';
   const out=document.querySelector('#field-list');
   const limit=window.POLE_LIST_LIMIT||300;
   out.innerHTML=filtered.slice(0,limit).map(fieldHTML).join('')||'<p>В этой области по фильтрам пока нет полей. Убери фильтры, включи универсальные площадки или передвинь карту.</p>';
