@@ -1,0 +1,45 @@
+name: Build permanent pitch catalogue
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 2 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build_catalog.py"
+      - ".github/workflows/build-catalog.yml"
+permissions:
+  contents: write
+concurrency:
+  group: football-pitch-catalogue
+  cancel-in-progress: false
+jobs:
+  import-pitches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download genuine OSM football and courtyard pitches
+        run: python scripts/build_catalog.py --limit 14
+      - name: Show catalogue size
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path("fields-catalog.js")
+          s=p.read_text()
+          print(json.loads(s.split("window.POLE_PERMANENT_FIELDS=",1)[1].split(";\nwindow.POLE_CATALOG_METADATA=",1)[0]).__len__(),"pitch records")
+          PY
+      - name: Save imported records in the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fields-catalog.js data/catalog-progress.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh permanent OSM pitch catalogue"
+            git push
+          fi
