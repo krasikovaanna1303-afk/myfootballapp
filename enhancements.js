@@ -223,7 +223,15 @@ loadOSM=async function(){
   infoState('Ищем футбольные и дворовые спортплощадки в OpenStreetMap…');
   renderFields();
   try{
-    const elements=await queryOverpass(osmQuery(bbox),controller.signal);
+    let elements;
+    try{
+      elements=await queryOverpass(osmQuery(bbox),controller.signal);
+    }catch(fullError){
+      if(controller.signal.aborted)throw fullError;
+      infoState('Подробный запрос не прошёл — пробуем только футбольные поля...');
+      const basic='[out:json][timeout:20];(nwr["sport"~"soccer|futsal|mini_soccer",i]('+bbox+'););out center 3000;';
+      elements=await queryOverpass(basic,controller.signal);
+    }
     if(request!==latest||controller.signal.aborted)return;
     const newItems=elements.map(geoEntry).filter(Boolean);
     for(const item of newItems)osmStore.set(item.id,item);
