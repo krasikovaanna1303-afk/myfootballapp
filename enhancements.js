@@ -56,10 +56,10 @@ if (cityForm) cityForm.addEventListener('submit',async event => {
 });
 const status = f => {
   if (f.access==='private')return {name:'Доступ ограничен',key:'private'};
+  if (f.access==='paid'||f.paid===true)return {name:'Платная · условия уточни',key:'paid'};
   if (f.school && !f.schoolAccessVerified)return {name:'Школьная · условия прохода уточни',key:'unknown'};
   if (f.access==='free')return {name:f.custom?'Бесплатно · по словам игрока':f.sourceVerified?'Бесплатно по условиям источника':'Бесплатно и доступно по OSM · проверь',key:'free'};
   if (f.access==='free_tag')return {name:'Без платы по OSM · доступ не подтверждён',key:'free'};
-  if (f.access==='paid'||f.paid===true)return {name:'Платная · условия уточни',key:'paid'};
   if (f.custom && f.paid===false)return {name:'Бесплатно · по словам автора',key:'free'};
   return {name:'Условия доступа неизвестны',key:'unknown'};
 };
