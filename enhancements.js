@@ -247,6 +247,8 @@ if(filter){
 document.querySelector('#search').placeholder='Название поля, район или адрес';
 document.querySelector('#search').oninput=()=>renderFields();
 document.querySelector('#filter').onchange=()=>renderFields();
+document.querySelector('#include-multisport').onchange=()=>renderFields();
+document.querySelector('#refresh-pitches').onclick=()=>{lastLoadedBounds=null;loadOSM()};
 const formBits=(u={},withCredentials=false)=> {
   const val=(k)=>E(u[k]||'');
   return (withCredentials?'<label>Электронная почта<input type="email" name="email" autocomplete="email" required></label><label>Пароль (минимум 8 символов)<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>':'')+
