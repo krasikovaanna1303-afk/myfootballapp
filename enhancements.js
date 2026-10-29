@@ -23,8 +23,9 @@ const city = document.querySelector('#city');
 if (city) {
   city.innerHTML = '<option value="">Выбери город или посёлок</option>' + cityList.map((c,i)=>'<option value="'+i+'">'+E(c[0])+'</option>').join('');
   city.onchange = () => {
-    if (city.value === '' || !map) return;
-    const c=cityList[Number(city.value)]; map.setView([c[1],c[2]],c[3]);
+    if (city.value === '' || city.value === 'custom' || !map) return;
+    const c=cityList[Number(city.value)]; if(!c)return;
+    map.setView([c[1],c[2]],c[3]===12?11:c[3]);
     document.querySelector('#search').value='';
     toast('Загружаем площадки: '+c[0]);
   };
