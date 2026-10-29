@@ -1,0 +1,1 @@
+window.POLE_CONFIG = { supabaseUrl: '', supabaseAnonKey: '' };
