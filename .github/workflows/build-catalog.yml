@@ -10,6 +10,8 @@ on:
       - ".github/workflows/build-catalog.yml"
 permissions:
   contents: write
+  pages: write
+  id-token: write
 concurrency:
   group: football-pitch-catalogue
   cancel-in-progress: false
@@ -54,3 +56,25 @@ jobs:
             echo "::error::Could not publish catalogue after five retries"
             exit 1
           fi
+
+  deploy-catalogue:
+    needs: import-pitches
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Get latest published pitch catalogue
+        run: git pull --ff-only origin main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
