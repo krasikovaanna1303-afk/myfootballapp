@@ -39,7 +39,13 @@ if (cityForm) cityForm.addEventListener('submit',async event => {
     const response=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(term)+'&count=5&language=ru&countryCode=RU',{signal:ac.signal});clearTimeout(timer);
     if(!response.ok)throw new Error('Невозможно выполнить поиск');
     const result=await response.json();
-    const place=result.results?.[0];if(!place) return toast('Населённый пункт не найден. Уточни запрос');
+    let place=result.results?.[0];
+    if(!place){
+      // Редкий посёлок может отсутствовать в GeoNames. Запрос по инициативе пользователя в OSM Nominatim.
+      const backup=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=ru&limit=1&q='+encodeURIComponent(term));
+      if(backup.ok){const list=await backup.json();const x=list?.[0];if(x)place={name:x.display_name?.split(',')[0]||term,latitude:Number(x.lat),longitude:Number(x.lon)}}
+    }
+    if(!place) return toast('Населённый пункт не найден. Уточни запрос');
     const label=[place.name,place.admin1].filter(Boolean).join(', ');
     city.insertAdjacentHTML('beforeend','<option selected value="custom">'+E(label)+'</option>');
     document.querySelector('#search').value='';
@@ -73,7 +79,7 @@ function fieldHTML(f){
 renderFields=function(){
   const q=String(document.querySelector('#search')?.value||'').toLowerCase();
   const filter=document.querySelector('#filter')?.value||'all';
-  let result=allFields().filter(f=>{
+  let result=allFields().filter(f=>!map || map.getBounds().pad(0.18).contains([Number(f.lat),Number(f.lon)])).filter(f=>{
     const s=status(f);
     return [f.name,f.city,f.address].join(' ').toLowerCase().includes(q) &&
       (filter==='all' || (filter==='free' && s.key==='free') || (filter==='paid' && s.key==='paid') || (filter==='lit' && f.lit===true) || (filter==='unknown' && s.key==='unknown'));
@@ -162,7 +168,6 @@ function demoAccount(){
 }
 function authAccount(mode='login'){
   if(!sb)return demoAccount();
-  const signed=sb.auth.getUser();
   if(user){
     modal('Мой аккаунт','<p><b>'+E(user.name)+'</b></p><p>Твой профиль привязан к электронной почте через Supabase Auth.</p><button class="secondary" id="pole-logout">Выйти из аккаунта</button>');
     document.querySelector('#pole-logout').onclick=async()=>{await sb.auth.signOut();user=null;save();document.querySelector('#account').textContent='Войти';document.querySelector('#modal').close();toast('Вы вышли из аккаунта')};
