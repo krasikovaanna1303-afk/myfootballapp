@@ -103,12 +103,15 @@ renderFields=function(){
   if(filtered.length>500)out.insertAdjacentHTML('beforeend','<p class="notice">В списке первые 500. Приблизь район или воспользуйся поиском, чтобы найти остальные.</p>');
   if(markers){
     markers.clearLayers();
+    const points=[];
     for(const f of filtered.slice(0,4000)){
       const s=status(f);
       const m=L.marker([Number(f.lat),Number(f.lon)],{title:String(f.name)});
       m.bindPopup('<b>'+E(f.name)+'</b><br>'+E(f.potential?'⚠ Для футбола не подтверждено':s.name)+'<br><button class="map-detail" data-map-field="'+E(f.id)+'">Подробнее</button>');
-      markers.addLayer(m);
+      points.push(m);
     }
+    if(typeof markers.addLayers==='function')markers.addLayers(points);
+    else points.forEach(m=>markers.addLayer(m));
   }
 };
 document.addEventListener('click',e=>{let b=e.target.closest('[data-map-field]');if(b)window.showField(b.dataset.mapField)});
