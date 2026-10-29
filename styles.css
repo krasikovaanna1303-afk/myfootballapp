@@ -13,3 +13,6 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 @media(max-width:700px){.map-heading{align-items:stretch}.map-heading button{width:100%}.community-toolbar button{flex:1}}
 
 .pitch-games{border-top:1px solid #d9e4d5;margin-top:22px;padding-top:18px}.pitch-game-item{padding:14px;margin:11px 0;border:1px solid #d9e4d5;border-radius:12px}.pitch-game-item p{margin:7px 0}.pitch-games>.primary{margin-top:12px}
+
+/* Commercial landing */
+.partner-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0}.partner-grid .card{height:100%}.partner-grid .card h3{margin:8px 0}.partner-grid .card button{margin-top:10px}@media(max-width:850px){.partner-grid{grid-template-columns:1fr}}
