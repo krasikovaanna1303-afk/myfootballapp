@@ -55,12 +55,19 @@ if (cityForm) cityForm.addEventListener('submit',async event => {
 });
 const status = f => {
   if (f.access==='private')return {name:'Доступ ограничен',key:'private'};
-  if (f.access==='free')return {name:'Бесплатно по данным OSM · проверь доступ',key:'free'};
+  if (f.access==='free')return {name:f.custom?'Бесплатно · по словам игрока':f.sourceVerified?'Бесплатно по условиям источника':'Бесплатно и доступно по OSM · проверь',key:'free'};
+  if (f.access==='free_tag')return {name:'Без платы по OSM · доступ не подтверждён',key:'free'};
   if (f.access==='paid'||f.paid===true)return {name:'Платная · условия уточни',key:'paid'};
   if (f.custom && f.paid===false)return {name:'Бесплатно · по словам автора',key:'free'};
   return {name:'Условия доступа неизвестны',key:'unknown'};
 };
-const allFields=()=>[...fields,...seed,...osm].filter(f=>Number.isFinite(Number(f.lat))&&Number.isFinite(Number(f.lon)));
+const allFields=()=>{
+  const byId=new Map();
+  for(const f of [...osm,...seed,...fields]){
+    if(Number.isFinite(Number(f.lat))&&Number.isFinite(Number(f.lon)))byId.set(String(f.id),f);
+  }
+  return [...byId.values()];
+};
 function safeOsmLink(f){
   if(f.sourceVerified && f.source && /^https:\/\//.test(f.source)) return f.source;
   const match=String(f.id||'').match(/^osm-(node|way|relation)-(\d+)$/);
@@ -72,25 +79,34 @@ function fieldHTML(f){
     '<span class="tag">'+E(f.surface||'Покрытие не указано')+'</span>',
     f.lit===true?'<span class="tag">💡 Есть освещение</span>':'',
     f.sourceVerified?'<span class="tag">🔗 Есть источник</span>':'',
-    f.custom?'<span class="tag">Добавлено игроком</span>':''
+    f.custom?'<span class="tag">Добавлено игроком</span>':'',
+    f.potential?'<span class="tag candidate">⚠ Не подтверждено для футбола</span>':'<span class="tag">⚽ Футбольный объект</span>'
   ].join('');
-  return '<div class="item"><div class="muted">'+E(f.city||'Площадка на карте')+'</div><h3>'+E(f.name)+'</h3><div class="tags">'+tags+'</div><p>'+E(f.address||f.description||'Источник: OpenStreetMap')+'</p><div class="actions"><button class="secondary" data-focus="'+E(f.id)+'">На карте</button><button class="secondary" data-field="'+E(f.id)+'">Подробнее</button></div></div>';
+  return '<div class="item"><div class="muted">'+E(f.city|| (f.potential?'Универсальная/дворовая площадка':'Футбольная площадка'))+'</div><h3>'+E(f.name)+'</h3><div class="tags">'+tags+'</div><p>'+E(f.address||f.description||'Источник: OpenStreetMap')+'</p><div class="actions"><button class="secondary" data-focus="'+E(f.id)+'">На карте</button><button class="secondary" data-field="'+E(f.id)+'">Подробнее</button></div></div>';
 }
 renderFields=function(){
-  const q=String(document.querySelector('#search')?.value||'').toLowerCase();
+  const q=String(document.querySelector('#search')?.value||'').toLowerCase().trim();
   const filter=document.querySelector('#filter')?.value||'all';
-  let result=allFields().filter(f=>!map || map.getBounds().pad(0.18).contains([Number(f.lat),Number(f.lon)])).filter(f=>{
-    const s=status(f);
-    return [f.name,f.city,f.address].join(' ').toLowerCase().includes(q) &&
-      (filter==='all' || (filter==='free' && s.key==='free') || (filter==='paid' && s.key==='paid') || (filter==='lit' && f.lit===true) || (filter==='unknown' && s.key==='unknown'));
-  });
-  result.sort((a,b)=> (status(a).key==='free'?0:status(a).key==='unknown'?1:2)-(status(b).key==='free'?0:status(b).key==='unknown'?1:2));
-  document.querySelector('#count').textContent=result.length+' · '+result.filter(f=>status(f).key==='free').length+' с отметкой «бесплатно»';
-  document.querySelector('#field-list').innerHTML=result.slice(0,180).map(fieldHTML).join('')||'<p>Для выбранной области подтверждённых по тегам полей нет. Попробуй другой район или выбери «Все поля».</p>';
+  const allowPotential=document.querySelector('#include-multisport')?.checked ?? true;
+  const viewport=map?.getBounds()?.pad(0.12);
+  let visible=allFields().filter(f=>!viewport||viewport.contains([Number(f.lat),Number(f.lon)]));
+  const countAll=visible.length, confirmed=visible.filter(f=>!f.potential).length;
+  const filtered=visible.filter(f=>(allowPotential||!f.potential) && [f.name,f.city,f.address].join(' ').toLowerCase().includes(q) &&
+    (filter==='all' || (filter==='free' && status(f).key==='free') || (filter==='paid' && status(f).key==='paid') ||
+     (filter==='lit' && f.lit===true) || (filter==='unknown' && status(f).key==='unknown')));
+  const weight=f=>(status(f).key==='free'?0:status(f).key==='unknown'?1:2)+(f.potential?3:0);
+  filtered.sort((a,b)=>weight(a)-weight(b));
+  document.querySelector('#count').textContent=filtered.length+' найдено · '+confirmed+' футбол · '+countAll+' всего в области';
+  const out=document.querySelector('#field-list');
+  out.innerHTML=filtered.slice(0,500).map(fieldHTML).join('')||'<p>В этой области по фильтрам пока нет полей. Убери фильтры, включи универсальные площадки или передвинь карту.</p>';
+  if(filtered.length>500)out.insertAdjacentHTML('beforeend','<p class="notice">В списке первые 500. Приблизь район или воспользуйся поиском, чтобы найти остальные.</p>');
   if(markers){
     markers.clearLayers();
-    for(const f of result.slice(0,600)){
-      L.marker([Number(f.lat),Number(f.lon)]).bindPopup('<b>'+E(f.name)+'</b><br>'+E(status(f).name)+'<br><button class="map-detail" data-map-field="'+E(f.id)+'">Подробнее</button>').addTo(markers);
+    for(const f of filtered.slice(0,4000)){
+      const s=status(f);
+      const m=L.marker([Number(f.lat),Number(f.lon)],{title:String(f.name)});
+      m.bindPopup('<b>'+E(f.name)+'</b><br>'+E(f.potential?'⚠ Для футбола не подтверждено':s.name)+'<br><button class="map-detail" data-map-field="'+E(f.id)+'">Подробнее</button>');
+      markers.addLayer(m);
     }
   }
 };
@@ -100,7 +116,7 @@ window.showField=function(id){
   const s=status(f),link=safeOsmLink(f);
   modal(f.name,'<p>'+E(f.address||f.city||'')+'</p><div class="tags"><span class="tag">'+E(s.name)+'</span><span class="tag">'+E(f.surface||'Покрытие неизвестно')+'</span><span class="tag">'+(f.lit?'💡 Освещение есть':'Освещение не подтверждено')+'</span></div><p>'+E(f.description||'')+'</p>'+
     (link?'<p><a href="'+E(link)+'" target="_blank" rel="noopener noreferrer">Источник сведений ↗</a></p>':'<p class="notice">Данные добавлены пользователем, независимо не подтверждены.</p>')+
-    '<p class="notice">Проверь доступность, аренду и безопасность перед игрой. Открытая карта не гарантирует разрешение на посещение.</p>'+
+    '<p class="notice">'+(f.potential?'Это универсальная или дворовая спортплощадка: наличие футбольных ворот и возможность играть не подтверждены. ':'')+'Проверь доступность, аренду и безопасность перед игрой. Открытая карта не гарантирует разрешение на посещение.</p>'+
     '<h3>Отзывы</h3>'+((f.reviews||[]).map(r=>'<p>⭐ '+E(r.rating)+'/5 · <b>'+E(r.author)+'</b><br>'+E(r.text)+'</p>').join('')||'<p>Пока нет отзывов</p>')+
     '<button class="primary" id="field-game">Создать здесь игру</button> '+(f.custom?'<button class="secondary" id="field-review">Оставить отзыв</button>':''));
   document.querySelector('#field-game').onclick=()=>{
@@ -113,37 +129,119 @@ window.showField=function(id){
     modal('Отзыв о поле','<form id="reviewform"><input type="hidden" name="id" value="'+E(f.id)+'"><label>Оценка<select name="rating">'+[5,4,3,2,1].map(n=>'<option value="'+n+'">'+n+' / 5</option>').join('')+'</select></label><label>Комментарий<textarea name="review" required maxlength="1000"></textarea></label><button class="primary">Опубликовать</button></form>');
   };
 };
-const cache = new Map();let latest=0;let currentAbort;
+// Расширенный поиск спортивных и дворовых площадок из OSM.
+// В отличие от фиксированного списка точек, запрос строится для выбранного района.
+// Для неизвестного вида спорта используем отдельный признак potential=true.
+const OSM_SERVERS=[
+  'https://overpass.private.coffee/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass-api.de/api/interpreter'
+];
+let lastLoadedBounds=null, latest=0, currentAbort=null;
+const osmStore=new Map(), memoryLimit=3500;
+try {
+  const cache=JSON.parse(localStorage.getItem('pole_osm_v4')||'null');
+  if(cache && Date.now()-cache.time<7*86400000 && Array.isArray(cache.items)){
+    for(const item of cache.items.slice(0,memoryLimit))osmStore.set(item.id,item);
+    osm=[...osmStore.values()];
+  }
+} catch {}
+let dataState='Поиск площадок в выбранной области карты';
+function infoState(message){
+  dataState=message;
+  const e=document.querySelector('#field-data-state');if(e)e.textContent=message;
+}
+function geoEntry(x){
+  const t=x.tags||{};
+  const lat=Number(x.lat??x.center?.lat),lon=Number(x.lon??x.center?.lon);
+  if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+  const a=t.access||'';
+  const forbidden=['private','no','customers','permit'].includes(a);
+  const sport=String(t.sport||'').toLowerCase();
+  const name=String(t.name||'');
+  const soccer=/soccer|futsal|mini_soccer|association_football|футбол/.test(sport) || /футбол|soccer|mini.football/i.test(name);
+  const potential=!soccer;
+  // Поле sport=multi либо без указания спорта: гипотеза, а не достоверная футбольная площадка.
+  // fee=no без явного access=yes также не означает гарантированный проход.
+  let access=forbidden?'private':t.fee==='yes'?'paid':
+    t.fee==='no'?(['yes','public','permissive'].includes(a)?'free':'free_tag'):'unknown';
+  const labels=[t['addr:street'],t['addr:housenumber']].filter(Boolean);
+  return {
+    id:'osm-'+x.type+'-'+x.id,
+    name:name || (potential?'Спортплощадка — уточнить футбол':'Футбольная площадка'),
+    city:t['addr:city']||'', address:labels.join(', '),
+    lat,lon,lit:t.lit==='yes'?true:t.lit==='no'?false:null,
+    surface:t.surface||'Не указано',
+    paid:t.fee==='yes'?true:t.fee==='no'?false:null,access,potential,
+    description:(potential?'Универсальная/дворовая спортивная площадка (футбол не указан). ':'')+
+      'Метка OpenStreetMap. Тип поля, свободный вход, ворота, часы и состояние требуют проверки.',
+    source:'https://www.openstreetmap.org/'+x.type+'/'+x.id,
+    reviews:[]
+  };
+}
+function osmQuery(bbox){
+  const B='('+bbox+')';
+  return '[out:json][timeout:30];('+
+    'nwr["leisure"="pitch"]["sport"~"soccer|futsal|mini_soccer|football",i]'+B+';'+
+    'nwr["leisure"="practice_pitch"]["sport"~"soccer|futsal",i]'+B+';'+
+    'nwr["leisure"="sports_centre"]["sport"~"soccer|futsal",i]'+B+';'+
+    'nwr["leisure"="stadium"]["sport"~"soccer|futsal",i]'+B+';'+
+    'nwr["leisure"="pitch"]["sport"="multi"]'+B+';'+
+    'nwr["leisure"="pitch"][!"sport"]'+B+';'+
+  ');out center 5000;';
+}
+async function queryOverpass(query,signal){
+  let error;
+  for(const endpoint of OSM_SERVERS){
+    if(signal.aborted)throw new DOMException('Aborted','AbortError');
+    const requestSignal=AbortSignal.any?AbortSignal.any([signal,AbortSignal.timeout(19000)]):signal;
+    try{
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+        body:'data='+encodeURIComponent(query),signal:requestSignal});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const data=await response.json();
+      if(!Array.isArray(data.elements))throw Error('Неверный ответ');
+      return data.elements;
+    }catch(e){error=e;if(signal.aborted)throw e;}
+  }
+  throw error||Error('Нет ответа от Overpass');
+}
 loadOSM=async function(){
   if(!map)return;
-  if(map.getZoom()<10){osm=[];renderFields();return toast('Приблизь карту, чтобы загрузить площадки конкретного района')}
-  const b=map.getBounds();
-  if((b.getNorth()-b.getSouth())*(b.getEast()-b.getWest())>1.7){osm=[];renderFields();return}
-  const bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(v=>v.toFixed(4)).join(',');
-  const key=bbox, req=++latest;
-  if(cache.has(key)){osm=cache.get(key);return renderFields()}
+  const view=map.getBounds();
+  if(map.getZoom()<9){infoState('Приблизь карту до уровня города для загрузки площадок');renderFields();return}
+  if(lastLoadedBounds&&lastLoadedBounds.contains(view)){renderFields();return}
+  // Запрашиваем видимую область плюс запас, чтобы при небольшом сдвиге не обращаться снова к серверу.
+  const bounds=view.pad(.24);
+  const area=(bounds.getNorth()-bounds.getSouth())*(bounds.getEast()-bounds.getWest());
+  if(area>2.6){infoState('Область слишком велика: приблизь карту');renderFields();return}
+  const bbox=[bounds.getSouth(),bounds.getWest(),bounds.getNorth(),bounds.getEast()].map(v=>v.toFixed(5)).join(',');
+  const request=++latest;
   if(currentAbort)currentAbort.abort();
-  const ctrl=new AbortController();currentAbort=ctrl;
-  const query='[out:json][timeout:18];(nwr["leisure"="pitch"]["sport"="soccer"]('+bbox+');nwr["leisure"="practice_pitch"]["sport"="soccer"]('+bbox+');nwr["leisure"="sports_centre"]["sport"="soccer"]('+bbox+'););out center 600;';
+  const controller=new AbortController();currentAbort=controller;
+  infoState('Ищем футбольные и дворовые спортплощадки в OpenStreetMap…');
+  renderFields();
   try{
-    const timer=setTimeout(()=>ctrl.abort(),19000);
-    const response=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(query),signal:ctrl.signal});
-    clearTimeout(timer);if(!response.ok)throw Error('Overpass HTTP '+response.status);
-    const json=await response.json();if(req!==latest)return;
-    const list=(json.elements||[]).map(x=>{
-      const t=x.tags||{},lat=x.lat??x.center?.lat,lon=x.lon??x.center?.lon;
-      if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lon)))return null;
-      if(['no','private','customers','permit'].includes(t.access))return null;
-      const free=(t.fee==='no' && ['yes','public','permissive'].includes(t.access)) || (t.fee==='no' && t.operator?.toLowerCase()==='public');
-      return {id:'osm-'+x.type+'-'+x.id,name:t.name||'Футбольная площадка',city:t['addr:city']||'',address:[t['addr:street'],t['addr:housenumber']].filter(Boolean).join(' '),lat:Number(lat),lon:Number(lon),surface:t.surface||'Не указано',lit:t.lit==='yes'?true:null,paid:t.fee==='yes'?true:null,access:free?'free':t.fee==='yes'?'paid':'unknown',description:'По данным OpenStreetMap; сведения об открытости поля требуют проверки.',reviews:[]};
-    }).filter(Boolean);
-    cache.set(key,list);if(cache.size>12)cache.delete(cache.keys().next().value);
-    osm=list;renderFields();
-  }catch(err){if(req!==latest)return;osm=[];renderFields();if(err?.name!=='AbortError')toast('Карта временно не отдала список полей. Попробуй другой район')}
+    const elements=await queryOverpass(osmQuery(bbox),controller.signal);
+    if(request!==latest||controller.signal.aborted)return;
+    const newItems=elements.map(geoEntry).filter(Boolean);
+    for(const item of newItems)osmStore.set(item.id,item);
+    while(osmStore.size>memoryLimit)osmStore.delete(osmStore.keys().next().value);
+    osm=[...osmStore.values()];
+    lastLoadedBounds=bounds;
+    infoState('Загружено '+newItems.length+' объектов OSM для этой области (среди них могут быть универсальные спортплощадки).');
+    try{localStorage.setItem('pole_osm_v4',JSON.stringify({time:Date.now(),items:osm}))}catch{}
+    renderFields();
+  }catch(err){
+    if(request!==latest||controller.signal.aborted)return;
+    infoState('Сервис OSM временно не ответил; показываются известные площадки и ранее загруженные данные. Повтори поиск, передвинув карту.');
+    renderFields();
+    toast('Загрузка полей не удалась. Перемести карту или попробуй позднее.');
+  }
 };
 const filter=document.querySelector('#filter');
 if(filter){
-  filter.innerHTML='<option value="all">Все поля</option><option value="free">🟢 С отметкой «бесплатно»</option><option value="unknown">Доступ не уточнён</option><option value="paid">Платные</option><option value="lit">С освещением</option>';
+  filter.innerHTML='<option value="all">Все площадки</option><option value="free">🟢 Отмечены бесплатными</option><option value="unknown">Доступ не уточнён</option><option value="paid">Платные</option><option value="lit">С освещением</option>';
   filter.value='all';
 }
 document.querySelector('#search').placeholder='Название поля, район или адрес';
