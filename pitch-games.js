@@ -33,7 +33,8 @@ window.showField=function(id){
    if(form.elements.fieldId)form.elements.fieldId.value=String(f.id);
  };
  const btn=document.querySelector('#pitch-create-game');if(btn)btn.onclick=create;
- const older=document.querySelector('#field-game');if(older)older.onclick=create;
+ const older=document.querySelector('#field-game');if(older){older.textContent='★ Оставить отзыв';older.classList.remove('primary');older.classList.add('secondary');older.onclick=()=>{const review=document.querySelector('[data-community-review]');if(review)review.click();else toast('Отзывы временно недоступны');};}
+ const duplicate=document.querySelector('#field-review');if(duplicate)duplicate.remove();
 };
 document.addEventListener('click',e=>{
  const join=e.target.closest('[data-join][data-kind="game"]');
