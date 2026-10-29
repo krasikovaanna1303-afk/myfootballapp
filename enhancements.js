@@ -101,12 +101,13 @@ renderFields=function(){
   filtered.sort((a,b)=>weight(a)-weight(b));
   document.querySelector('#count').textContent=filtered.length+' найдено · '+confirmed+' футбол · '+countAll+' всего в области';
   const out=document.querySelector('#field-list');
-  out.innerHTML=filtered.slice(0,500).map(fieldHTML).join('')||'<p>В этой области по фильтрам пока нет полей. Убери фильтры, включи универсальные площадки или передвинь карту.</p>';
-  if(filtered.length>500)out.insertAdjacentHTML('beforeend','<p class="notice">В списке первые 500. Приблизь район или воспользуйся поиском, чтобы найти остальные.</p>');
+  const limit=window.POLE_LIST_LIMIT||300;
+  out.innerHTML=filtered.slice(0,limit).map(fieldHTML).join('')||'<p>В этой области по фильтрам пока нет полей. Убери фильтры, включи универсальные площадки или передвинь карту.</p>';
+  if(filtered.length>limit)out.insertAdjacentHTML('beforeend','<button class="secondary load-more-pitches" data-more-pitches="1">Показать ещё '+Math.min(300,filtered.length-limit)+' площадок (всего '+filtered.length+')</button>');
   if(markers){
     markers.clearLayers();
     const points=[];
-    for(const f of filtered.slice(0,4000)){
+    for(const f of filtered.slice(0,7500)){
       const s=status(f);
       const m=L.marker([Number(f.lat),Number(f.lon)],{title:String(f.name)});
       m.bindPopup('<b>'+E(f.name)+'</b><br>'+E(f.potential?'⚠ Для футбола не подтверждено':s.name)+'<br><button class="map-detail" data-map-field="'+E(f.id)+'">Подробнее</button>');
@@ -117,6 +118,7 @@ renderFields=function(){
   }
 };
 document.addEventListener('click',e=>{let b=e.target.closest('[data-map-field]');if(b)window.showField(b.dataset.mapField)});
+document.addEventListener('click',e=>{if(e.target.closest('[data-more-pitches]')){window.POLE_LIST_LIMIT=(window.POLE_LIST_LIMIT||300)+300;renderFields()}});
 window.showField=function(id){
   const f=allFields().find(x=>x.id===id);if(!f)return;
   const s=status(f),link=safeOsmLink(f);
@@ -145,7 +147,7 @@ const OSM_SERVERS=[
   'https://overpass-api.de/api/interpreter'
 ];
 let lastLoadedBounds=null, latest=0, currentAbort=null;
-const osmStore=new Map(), memoryLimit=3500;
+const osmStore=new Map(), memoryLimit=10000;
 try {
   const cache=JSON.parse(localStorage.getItem('pole_osm_v4')||'null');
   if(cache && Date.now()-cache.time<7*86400000 && Array.isArray(cache.items)){
@@ -201,7 +203,7 @@ function osmQuery(bbox){
     'nwr["leisure"="sports_hall"]["sport"~"soccer|futsal|football",i]'+B+';'+
     'nwr["leisure"="playground"]["sport"~"soccer|futsal|football",i]'+B+';'+
     'nwr["amenity"="school"]["sport"~"soccer|futsal|football",i]'+B+';'+
-  ');out center 5000;';
+  ');out center 7500;';
 }
 async function queryOverpass(query,signal){
   let error;
