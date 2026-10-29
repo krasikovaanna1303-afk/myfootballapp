@@ -165,6 +165,11 @@ function geoEntry(x){
   const school=t.amenity==='school'||t['operator:type']==='school'||t.school!=null||
     /(?:^|\s)(?:школа|лицей|гимназия|гбоу|school)(?:\s|$)/i.test(name);
   const soccer=/soccer|futsal|mini_soccer|football/.test(sport)||/футбол|soccer|mini.football/i.test(name);
+  // Не выдаём явно баскетбольную, теннисную и другие специализированные площадки за футбольную.
+  const definitelyOther=sport && sport!=='multi' && !soccer &&
+    !/soccer|futsal|mini_soccer|football/.test(sport);
+  if(definitelyOther)return null;
+  if(!soccer && /баскетбол|теннис|волейбол|хоккей|basketball|tennis|volleyball|hockey/i.test(name))return null;
   const potential=!soccer||t.amenity==='school';
   const a=String(t.access||'');
   const restricted=['no','private','customers','permit'].includes(a);
@@ -186,17 +191,16 @@ function geoEntry(x){
 }
 function osmQuery(bbox){
   const B='('+bbox+')';
+  // Одна широкая выборка всех leisure=pitch вместо десяти отдельных запросов:
+  // позволяет находить дворовые поля с пустым sport и не терять soccer по несовершенной разметке.
   return '[out:json][timeout:30];('+
-    'nwr["leisure"="pitch"]["sport"~"soccer|futsal|mini_soccer|football",i]'+B+';'+
-    'nwr["leisure"="practice_pitch"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="pitch"]'+B+';'+
+    'nwr["leisure"="practice_pitch"]'+B+';'+
     'nwr["leisure"="sports_centre"]["sport"~"soccer|futsal|football",i]'+B+';'+
-    'nwr["leisure"="sports_hall"]["sport"~"soccer|futsal|football",i]'+B+';'+
     'nwr["leisure"="stadium"]["sport"~"soccer|futsal|football",i]'+B+';'+
+    'nwr["leisure"="sports_hall"]["sport"~"soccer|futsal|football",i]'+B+';'+
     'nwr["leisure"="playground"]["sport"~"soccer|futsal|football",i]'+B+';'+
     'nwr["amenity"="school"]["sport"~"soccer|futsal|football",i]'+B+';'+
-    'nwr["leisure"="pitch"]["name"~"футбол|football|soccer",i]'+B+';'+
-    'nwr["leisure"="pitch"]["sport"="multi"]'+B+';'+
-    'nwr["leisure"="pitch"][!"sport"]'+B+';'+
   ');out center 5000;';
 }
 async function queryOverpass(query,signal){
