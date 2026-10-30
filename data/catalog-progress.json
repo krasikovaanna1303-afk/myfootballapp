@@ -1,5 +1,5 @@
 {
-  "next_index": 28,
+  "next_index": 42,
   "checked": {
     "Санкт-Петербург": {
       "time": "2026-10-29T18:16:39+00:00",
@@ -131,6 +131,72 @@
     "Томск": {
       "time": "2026-10-29T18:52:25+00:00",
       "error": "The read operation timed out"
+    },
+    "Оренбург": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 83,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Кемерово": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 130,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Новокузнецк": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "error": "The read operation timed out"
+    },
+    "Рязань": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "error": "The read operation timed out"
+    },
+    "Астрахань": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 84,
+      "server": "https://overpass.kumi.systems/api/interpreter"
+    },
+    "Пенза": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 181,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Липецк": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "error": "The read operation timed out"
+    },
+    "Киров": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 202,
+      "server": "https://overpass.private.coffee/api/interpreter"
+    },
+    "Чебоксары": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "error": "HTTP Error 504: Gateway Timeout"
+    },
+    "Калининград": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 245,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Тула": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 178,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Курск": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 134,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Севастополь": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 251,
+      "server": "https://overpass.kumi.systems/api/interpreter"
+    },
+    "Белгород": {
+      "time": "2026-10-30T03:04:38+00:00",
+      "features": 157,
+      "server": "https://overpass-api.de/api/interpreter"
     }
   }
 }
