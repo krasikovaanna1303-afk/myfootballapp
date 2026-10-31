@@ -1,5 +1,5 @@
 {
-  "next_index": 42,
+  "next_index": 56,
   "checked": {
     "Санкт-Петербург": {
       "time": "2026-10-29T18:16:39+00:00",
@@ -197,6 +197,72 @@
       "time": "2026-10-30T03:04:38+00:00",
       "features": 157,
       "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Тверь": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "error": "The read operation timed out"
+    },
+    "Псков": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "error": "The read operation timed out"
+    },
+    "Великий Новгород": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 83,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Мурманск": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 65,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Архангельск": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 140,
+      "server": "https://overpass.private.coffee/api/interpreter"
+    },
+    "Петрозаводск": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "error": "HTTP Error 504: Gateway Timeout"
+    },
+    "Сыктывкар": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 94,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Вологда": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 125,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Смоленск": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 93,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Брянск": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 103,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Кострома": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 106,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Владимир": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 223,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Калуга": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "error": "The read operation timed out"
+    },
+    "Орёл": {
+      "time": "2026-10-31T03:02:04+00:00",
+      "features": 112,
+      "server": "https://overpass.private.coffee/api/interpreter"
     }
   }
 }
