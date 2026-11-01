@@ -1,5 +1,5 @@
 {
-  "next_index": 56,
+  "next_index": 70,
   "checked": {
     "Санкт-Петербург": {
       "time": "2026-10-29T18:16:39+00:00",
@@ -263,6 +263,72 @@
       "time": "2026-10-31T03:02:04+00:00",
       "features": 112,
       "server": "https://overpass.private.coffee/api/interpreter"
+    },
+    "Саранск": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 81,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Йошкар-Ола": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 87,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Набережные Челны": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 280,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Магнитогорск": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 88,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Нальчик": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "error": "The read operation timed out"
+    },
+    "Грозный": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "error": "The read operation timed out"
+    },
+    "Владикавказ": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "error": "The read operation timed out"
+    },
+    "Ставрополь": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 126,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Сочи": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 224,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Новороссийск": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "error": "The read operation timed out"
+    },
+    "Анапа": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 161,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Таганрог": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 86,
+      "server": "https://overpass.private.coffee/api/interpreter"
+    },
+    "Сургут": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 216,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Нижневартовск": {
+      "time": "2026-11-01T03:04:07+00:00",
+      "features": 99,
+      "server": "https://overpass-api.de/api/interpreter"
     }
   }
 }
