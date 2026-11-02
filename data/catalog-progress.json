@@ -1,5 +1,5 @@
 {
-  "next_index": 70,
+  "next_index": 84,
   "checked": {
     "Санкт-Петербург": {
       "time": "2026-10-29T18:16:39+00:00",
@@ -328,6 +328,71 @@
     "Нижневартовск": {
       "time": "2026-11-01T03:04:07+00:00",
       "features": 99,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Якутск": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 81,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Чита": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "error": "The read operation timed out"
+    },
+    "Благовещенск": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "error": "The read operation timed out"
+    },
+    "Комсомольск-на-Амуре": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "error": "The read operation timed out"
+    },
+    "Южно-Сахалинск": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 134,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Улан-Удэ": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "error": "The read operation timed out"
+    },
+    "Горно-Алтайск": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 52,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Абакан": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 151,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Кызыл": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 60,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Курган": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 62,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Стерлитамак": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 65,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Салават": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "error": "The read operation timed out"
+    },
+    "Дзержинск": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 67,
+      "server": "https://overpass-api.de/api/interpreter"
+    },
+    "Арзамас": {
+      "time": "2026-11-02T03:08:12+00:00",
+      "features": 34,
       "server": "https://overpass-api.de/api/interpreter"
     }
   }
