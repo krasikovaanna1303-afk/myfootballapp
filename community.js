@@ -102,14 +102,65 @@ const contactUrl=p=>{
  if(p.contact_platform==='vk')return 'https://vk.com/'+handle;
  return '';
 };
+let communityFilter='all';
+function communityAvatar(p){
+ const image=window.POLE_AVATAR_URL?.(p.avatar_path)||'';
+ const initial=Array.from(String(p.author||'И').trim())[0]?.toUpperCase()||'И';
+ return '<span class="community-avatar">'+(image?'<img src="'+escapeHTML(image)+'" loading="lazy" alt="Фото автора объявления">':escapeHTML(initial))+'</span>';
+}
+function keyChips(p){
+ const d=p.details||{},chips=[];
+ const push=(v)=>{if(v)chips.push('<span class="community-chip">'+escapeHTML(v)+'</span>')};
+ if(p.type==='player'){
+  push(positionLabels[d.position]);push(skillLabels[d.skill]);
+  push(chosenFormats(d).join(' / '));
+  push(Object.fromEntries(playerGoals)[d.goal]);
+ }else if(p.type==='team'){
+  push(positionLabels[d.needed_position]);
+  push(skillLabels[d.required_skill]);
+  push(chosenFormats(d).join(' / '));
+  push(d.team_gender==='female'?(d.female_team_kind==='moms'?'Команда мам':'Женская команда'):d.team_gender==='male'?'Мужская команда':'');
+  push(Object.fromEntries(ageGroups)[d.age_group]);
+ }else{
+  push(chosenFormats(d).join(' / '));
+  push(d.tournament_fee!==undefined?('Взнос: '+d.tournament_fee+' ₽'):'');
+ }
+ return chips.slice(0,6).join('');
+}
 function render(){
  const root=document.querySelector('#community-content');if(!root)return;
- const posts=[...(window.POLE_SHARED_POSTS||rows())].sort((a,b)=>(b.created||'').localeCompare(a.created||''));
- root.innerHTML='<div class="community-toolbar"><button class="primary" data-post-create="player">+ Ищу команду</button><button class="secondary" data-post-create="team">+ Нужны игроки</button><button class="secondary" data-post-create="tournament">+ Объявить турнир</button><button class="secondary" data-partner="tournament">Сотрудничество для организаторов</button></div><p class="notice">'+(window.POLE_SUPABASE_CLIENT?'Объявления доступны всем. Для публикации необходимо войти в аккаунт.':'Демо: объявления сохраняются на этом устройстве.')+'</p><div class="cards community-posts">'+(posts.map(p=>{
- const url=contactUrl(p),cta=p.type==='player'?'Позвать в команду':p.type==='team'?'Написать команде':'Связаться с организатором';
- return '<article class="card community-post"><div class="eyebrow">'+escapeHTML(types[p.type]||'Объявление')+'</div><h3>'+escapeHTML(p.title)+'</h3><p>📍 '+escapeHTML(p.city)+(p.date?' · 📅 '+escapeHTML(p.date):'')+'</p><div class="post-details">'+detailsLabel(p)+'</div><p><b>Дополнительная информация</b><span class="post-description">'+escapeHTML(p.description||'')+'</span></p><p class="muted">Автор: '+escapeHTML(p.author)+' · '+escapeHTML((p.created||'').slice(0,10))+'</p>'+(url?'<a class="post-contact primary" href="'+url+'" target="_blank" rel="noopener noreferrer">'+cta+' · '+(p.contact_platform==='telegram'?'Telegram':'VK')+'</a>':'')+'</article>';
- }).join('')||'<article class="card"><h3>Пока нет объявлений</h3><p>Размести анкету свободного игрока, запрос команды или турнир.</p></article>')+'</div>';
+ const allPosts=[...(window.POLE_SHARED_POSTS||rows())].sort((a,b)=>(b.created||'').localeCompare(a.created||''));
+ const posts=communityFilter==='all'?allPosts:allPosts.filter(p=>p.type===communityFilter);
+ const filters=[['all','Все'],['player','Ищу команду'],['team','Нужны игроки'],['tournament','Турниры']];
+ root.innerHTML=
+  '<div class="community-toolbar"><button class="primary" data-post-create="player">+ Ищу команду</button><button class="secondary" data-post-create="team">+ Нужны игроки</button><button class="secondary" data-post-create="tournament">+ Объявить турнир</button></div>'+
+  '<div class="community-feed-head"><div><h2>Футбольное сообщество</h2><p class="notice">Находи игроков, команды и турниры, связывайся напрямую.</p></div><span class="community-post-counter">'+posts.length+' объявлений</span></div>'+
+  '<div class="community-switch" role="group" aria-label="Фильтр объявлений">'+filters.map(([v,label])=>'<button type="button" data-community-filter="'+v+'" class="'+(v===communityFilter?'active':'')+'" aria-pressed="'+(v===communityFilter)+'">'+label+'</button>').join('')+'</div>'+
+  '<div class="community-feed">'+(posts.map(p=>{
+   const url=contactUrl(p),cta=p.type==='player'?'Позвать в команду':p.type==='team'?'Написать команде':'Связаться с организатором';
+   const d=p.details||{};
+   const author=p.type==='team'?(d.team_name||p.author):p.type==='tournament'?(d.tournament_name||p.author):p.author;
+   const caption=p.type==='player'?'Ищет команду':p.type==='team'?'Нужны игроки':'Турнир';
+   return '<article class="community-post-card"><div class="community-post-head">'+communityAvatar(p)+
+    '<div class="community-post-author"><strong>'+escapeHTML(author||'Игрок')+'</strong><span>'+escapeHTML(p.city||'')+' · '+escapeHTML((p.created||'').slice(0,10))+'</span></div>'+
+    '<span class="community-post-label">'+caption+'</span></div>'+
+    '<h3>'+escapeHTML(p.title)+'</h3>'+
+    '<div class="community-chips">'+keyChips(p)+'</div>'+
+    (d.purpose==='tournament'&&d.tournament_name?'<p class="community-competition">🏆 '+escapeHTML(d.tournament_name)+(d.tournament_date?' · '+escapeHTML(d.tournament_date):'')+'</p>':'')+
+    '<p class="community-post-summary">'+escapeHTML(p.description||'')+'</p>'+
+    '<details class="community-post-extra"><summary>Подробнее об объявлении</summary><div class="post-details">'+detailsLabel(p)+'</div></details>'+
+    (url?'<a class="community-contact-button" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">'+cta+' · '+(p.contact_platform==='telegram'?'Telegram':'ВКонтакте')+'</a>':'<p class="notice">Контакт автора не указан.</p>')+
+    '</article>';
+  }).join('')||'<div class="card"><h3>Объявлений пока нет</h3><p>Стань первым: размести анкету игрока, запрос команды или объявление о турнире.</p></div>')+'</div>'+
+  '<p class="notice">Контакты указаны авторами объявлений. «ПОЛЕ» не проверяет их и не передаёт ваши сообщения сторонним сервисам.</p>';
 }
+document.addEventListener('click',event=>{
+ const button=event.target.closest('[data-community-filter]');
+ if(!button)return;
+ communityFilter=button.dataset.communityFilter;
+ render();
+});
+
 function contactFields(){
  return '<fieldset class="post-contact-fields"><legend>Как с тобой связаться</legend><p class="notice">Контакт будет виден всем посетителям объявления. Указывай аккаунт, которым готов(а) поделиться.</p>'+
  selection('Мессенджер','contact_platform',[['','Выбери мессенджер'],['telegram','Telegram'],['vk','ВКонтакте']])+
