@@ -14,7 +14,7 @@ function renderPitchGames(id){
  const found=upcoming(f);
  target.innerHTML=found.length?found.map(g=>{
   const n=g.attendees?.length||0,cap=g.capacity==null?null:Number(g.capacity),joined=!!user&&g.attendees?.includes(user.id),full=cap!==null&&cap<=n;
-  return '<article class="pitch-game-item"><b>'+esc(g.title)+'</b><p>📅 '+esc(fmt(g.date,g.time))+' · '+(cap===null?n+' игроков · без ограничений':n+'/'+cap+' игроков')+'</p><p>'+esc(g.description||'')+'</p>'+(window.POLE_GAME_ROSTER_HTML?.(g)||'')+'<button class="secondary" data-kind="game" data-join="'+esc(g.id)+'" '+(full&&!joined?'disabled':'')+'>'+(joined?'Отменить участие':full?'Мест нет':'Присоединиться')+'</button></article>';
+  return '<article class="pitch-game-item"><b>'+esc(g.title)+'</b><p>📅 '+esc(fmt(g.date,g.time))+' · '+(cap===null?n+' игроков · без ограничений':n+'/'+cap+' игроков')+'</p><p>'+esc(g.description||'')+'</p>'+(window.POLE_GAME_ROSTER_HTML?.(g)||'')+'<button class="secondary" data-kind="game" data-join="'+esc(g.id)+'" '+(full&&!joined?'disabled':'')+'>'+(joined?'Отменить участие':full?'Мест нет':'Присоединиться')+'</button>'+(joined?'<button type="button" class="secondary game-chat-trigger" data-game-chat="'+esc(g.id)+'">💬 Чат игры</button>':'')+'</article>';
  }).join(''):'<p class="notice">Здесь пока нет предстоящих игр. Создай первую!</p>';
 }
 const prior=window.showField;
