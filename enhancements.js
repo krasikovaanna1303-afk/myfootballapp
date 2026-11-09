@@ -284,7 +284,7 @@ const formBits=(u={},withCredentials=false)=> {
   return (withCredentials?'<label>Электронная почта<input type="email" name="email" autocomplete="email" required></label><label>Пароль (минимум 8 символов)<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>':'')+
   '<label>Имя или никнейм<input name="name" autocomplete="nickname" maxlength="40" minlength="2" required value="'+val('name')+'"></label>'+
   '<label>Возраст (лет)<input name="age" type="number" min="16" max="100" required value="'+val('age')+'"></label>'+
-  '<label>Пол (можно не указывать)<select name="gender"><option value="">Не указывать</option><option value="female">Женский</option><option value="male">Мужской</option><option value="other">Другой</option></select></label>'+
+  '<label>Пол (обязательно)<select name="gender" required><option value="" disabled selected>Выбери пол</option><option value="female">Женский</option><option value="male">Мужской</option></select></label>'+
   '<label>Уровень игры<select name="skill" required><option value="new">Новичок</option><option value="amateur">Любитель</option><option value="confident">Уверенно играю</option><option value="advanced">Продвинутый</option></select></label>'+
   '<label>Предпочитаемая позиция<select name="position"><option value="">Не важно</option><option value="gk">Вратарь</option><option value="def">Защитник</option><option value="mid">Полузащитник</option><option value="fwd">Нападающий</option></select></label>'+
   '<label>Город<input name="city" maxlength="80" required value="'+val('city')+'" placeholder="Например, Санкт-Петербург"></label>'+
@@ -292,7 +292,7 @@ const formBits=(u={},withCredentials=false)=> {
   '<label class="checkline"><input type="checkbox" name="trips" '+(u.trips?'checked':'')+'> Интересны футбольные поездки в другие города</label>';
 };
 function hydrateProfile(f,d){
-  for(const n of ['gender','skill','position','format']){if(f.elements[n] && d[n]!=null)f.elements[n].value=d[n]}
+  for(const n of ['gender','skill','position','format']){if(f.elements[n] && d[n]!=null && (n!=='gender'||['female','male'].includes(d[n])))f.elements[n].value=d[n]}
 }
 function demoAccount(){
   modal('Анкета игрока · демо','<p class="notice">Сейчас эта анкета сохраняется только в твоём браузере, без паролей и общего аккаунта.</p><form id="pole-demo-profile">'+formBits(user||{},false)+'<button class="primary" style="margin-top:18px">Сохранить анкету</button></form>');
@@ -319,6 +319,7 @@ document.addEventListener('submit',async ev=>{
   const id=ev.target.id;
   if(id!=='pole-demo-profile'&&id!=='pole-auth-form')return;
   ev.preventDefault();const f=ev.target,d=Object.fromEntries(new FormData(f).entries());
+  if(id==='pole-demo-profile' || (id==='pole-auth-form' && f.dataset.mode==='signup')){if(!['female','male'].includes(d.gender)){toast('Выбери пол: женский или мужской');return}}
   if(id==='pole-demo-profile'){
     user={id:user?.id||uid(),name:d.name.trim(),age:+d.age,gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),format:d.format,trips:d.trips==='on'};
     save();account.textContent=user.name.slice(0,12);
@@ -329,7 +330,7 @@ document.addEventListener('submit',async ev=>{
   try {
     if(f.dataset.mode==='signup'){
       const payload={nickname:d.name.trim(),age:+d.age,gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),format:d.format,trips:d.trips==='on'};
-      const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{data:payload}});
+      const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/',data:payload}});
       if(error)throw error;
       if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. После этого войди в аккаунт.';return}
     }else{
