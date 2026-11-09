@@ -362,9 +362,10 @@ function validateProfileForm(form){
   const label=invalid.closest('label')?.firstChild?.textContent?.trim()||invalid.name;
   msg=invalid.value?'Проверь поле «'+label+'».':'Заполни поле «'+label+'».';
   focus=invalid;invalid.classList.add('field-error');
- }else if(form.querySelector('[data-format-group]')&&!new FormData(form).getAll('formats').length){
+ }else if(!new FormData(form).getAll('formats').length&&[...form.querySelectorAll('[data-format-group]')].some(x=>!x.closest('[hidden]'))){
   msg='Выбери хотя бы один формат футбола или «Любой».';
-  focus=form.querySelector('[data-format-group]');focus.classList.add('field-error');
+  focus=[...form.querySelectorAll('[data-format-group]')].find(x=>!x.closest('[hidden]'));
+  focus.classList.add('field-error');
  }
  const node=form.querySelector('.form-validation-message');
  if(node)node.textContent=msg;
@@ -445,6 +446,8 @@ function authAccount(mode='login'){
     const on=section.dataset.signupSection===type;section.hidden=!on;
     section.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=!on);
    });
+   // Переключение типа профиля не должно включать скрытый выбор типа женской команды.
+   syncTeamKind(form.querySelector('[data-signup-section="team"]'));
    form.querySelectorAll('[data-signup-type]').forEach(b=>b.classList.toggle('active',b.dataset.signupType===type));
    form.querySelector('.form-validation-message').textContent='';
   };
