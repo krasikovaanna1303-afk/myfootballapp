@@ -101,7 +101,7 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 /* Игры: понятная вместимость, список игроков и сообщения об ошибках анкеты. */
 .game-unlimited-choice{display:flex;align-items:center;gap:10px;margin:17px 0 8px;font-size:14px}
 .game-unlimited-choice input{width:20px;height:20px;flex:none;margin:0}
-.game-capacity-label[hidden]{display:none!important}
+.game-capacity-label input[hidden]{display:none!important}
 .game-roster{border:1px solid #dfe8d9;border-radius:11px;padding:10px 13px;margin:13px 0;background:#fbfdf9}
 .game-roster summary{cursor:pointer;font-weight:750;color:#23452f;line-height:1.4}
 .game-roster-list{display:grid;gap:8px;margin-top:12px}
