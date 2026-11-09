@@ -35,13 +35,23 @@ document.addEventListener('click',e=>{
 const types={player:'Ищу команду',team:'Команде нужны игроки',tournament:'Турнир для команд'};
 const skills=[['','Выбери уровень'],['new','Новичок'],['amateur','Любитель'],['confident','Уверенно играю'],['advanced','Продвинутый']];
 const positions=[['','Выбери позицию'],['gk','Вратарь'],['def','Защитник'],['mid','Полузащитник'],['fwd','Нападающий'],['any','Любая позиция']];
-const formats=[['','Выбери формат'],['5v5','5 на 5'],['7v7','7 на 7'],['11v11','11 на 11'],['any','Любой']];
+const formats=[['','Выбери формат'],['5v5','5×5'],['6v6','6×6'],['7v7','7×7'],['8v8','8×8'],['11v11','11×11'],['any','Любой']];
 const genders=[['','Выбери пол'],['female','Женский'],['male','Мужской']];
 const targetGenders=[['','Выбери'],['female','Женская команда'],['male','Мужская команда'],['any','Без ограничений по полу']];
 const ageGroups=[['','Выбери возрастную категорию'],['any','18 лет и старше (без ограничений)'],['18-24','18–24 года'],['25-34','25–34 года'],['35-44','35–44 года'],['45+','45 лет и старше']];
 const teamKinds=[['','Выбери тип команды'],['regular','Обычная женская команда (без ограничений)'],['moms','Команда мам']];
 const playerGoals=[['','Выбери цель поиска'],['training','Для регулярных тренировок'],['tournament','Для участия в турнирах'],['both','Для тренировок и турниров'],['matches','Для любительских матчей без постоянных тренировок']];
 const skillLabels=Object.fromEntries(skills),positionLabels=Object.fromEntries(positions),formatLabels=Object.fromEntries(formats),genderLabels=Object.fromEntries(genders);
+
+const formatNames=Object.fromEntries(formats);
+const chosenFormats=d=>{
+ const values=Array.isArray(d?.formats)&&d.formats.length?d.formats:(d?.format?[d.format]:[]);
+ return values.map(v=>formatNames[v]||v).filter(Boolean);
+};
+const formatMulti=(source={})=>{
+ const wanted=Array.isArray(source.formats)&&source.formats.length?source.formats:source.format?[source.format]:[];
+ return '<fieldset class="profile-formats" data-community-formats><legend>Формат футбола</legend><p class="notice">Можно выбрать несколько. «Любой» — вместо конкретных форматов.</p><div class="format-choices">'+formats.filter(([v])=>v).map(([v,caption])=>'<label class="format-option"><input type="checkbox" name="formats" value="'+v+'" '+(wanted.includes(v)?'checked':'')+'><span>'+caption+'</span></label>').join('')+'</div></fieldset>';
+};
 const rows=()=>read('community_posts');
 const input=(label,name,value='',attrs='required maxlength="100"')=>'<label>'+label+'<input name="'+name+'" value="'+escapeHTML(value)+'" '+attrs+'></label>';
 const selection=(label,name,options,chosen='')=>'<label>'+label+'<select name="'+name+'" required>'+options.map(([v,title])=>'<option value="'+escapeHTML(v)+'"'+(!v?' disabled':'')+(String(chosen)===v?' selected':'')+'>'+escapeHTML(title)+'</option>').join('')+'</select></label>';
@@ -49,14 +59,14 @@ const detailsLabel=(p)=>{
  const d=p.details||{},kind=p.type;
  const values=kind==='player'?[
   ['Возраст',d.age?' '+d.age+' лет':''],['Пол',genderLabels[d.gender]],['Уровень',skillLabels[d.skill]],
-  ['Позиция',positionLabels[d.position]],['Формат',formatLabels[d.format]],
+  ['Позиция',positionLabels[d.position]],['Форматы',chosenFormats(d).join(', ')],
   ['Для чего ищет команду',Object.fromEntries(playerGoals)[d.goal]]
  ]:kind==='team'?[
   ['Команда',d.team_name],['Позиция',positionLabels[d.needed_position]],
   ['Состав команды',({female:'Женская команда',male:'Мужская команда',any:'Без ограничений по полу'})[d.team_gender]],
   ['Тип женской команды',d.team_gender==='female'?Object.fromEntries(teamKinds)[d.female_team_kind]:''],
   ['Возрастная категория',Object.fromEntries(ageGroups)[d.age_group]||({'16-18':'16–18 лет','18-25':'18–25 лет','18-35':'18–35 лет','18+':'18+','35+':'35+'})[d.age_group]],
-  ['Уровень',skillLabels[d.required_skill]],['Формат',formatLabels[d.format]],
+  ['Уровень',skillLabels[d.required_skill]],['Форматы',chosenFormats(d).join(', ')],
   ['Нужно игроков',d.spots?String(d.spots):''],
   ['Цель набора',({regular:'В постоянный состав',match:'На отдельный матч',tournament:'На конкретный турнир'})[d.purpose]],
   ['Турнир',d.purpose==='tournament'?d.tournament_name:''],
@@ -64,7 +74,7 @@ const detailsLabel=(p)=>{
   ['Взнос за турнир',d.purpose==='tournament'&&d.tournament_fee!==''&&d.tournament_fee!=null?d.tournament_fee+' ₽ / игрок':''],
   ['Где и когда играете',d.schedule]
  ]:[
-  ['Название турнира',d.tournament_name],['Формат',formatLabels[d.format]],
+  ['Название турнира',d.tournament_name],['Форматы',chosenFormats(d).join(', ')],
   ['Категория',({female:'Женские команды',male:'Мужские команды',any:'Все команды'})[d.team_gender]],
   ['Взнос',d.tournament_fee!==''&&d.tournament_fee!=null?d.tournament_fee+' ₽ / команду':''],
   ['Место проведения',d.venue],['Свободных мест',d.slots?String(d.slots):'']
