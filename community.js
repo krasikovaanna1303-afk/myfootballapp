@@ -36,7 +36,7 @@ const types={player:'Ищу команду',team:'Команда ищет игр
 const rows=()=>read('community_posts');
 function render(){
  const root=document.querySelector('#community-content');if(!root)return;
- const posts=rows().sort((a,b)=>b.created.localeCompare(a.created));
+ const posts=(window.POLE_SHARED_POSTS||rows()).sort((a,b)=>b.created.localeCompare(a.created));
  root.innerHTML='<div class="community-toolbar"><button class="primary" data-post-create="player">+ Ищу команду</button><button class="secondary" data-post-create="team">+ Нужны игроки</button><button class="secondary" data-partner="tournament">Сотрудничество для организаторов турниров</button></div><p class="notice">Демо: объявления пока видны только на этом устройстве. Общие публикации, заявки участников, модерация и уведомления требуют серверной базы.</p><div class="cards">'+(posts.map(p=>'<article class="card"><div class="eyebrow">'+escapeHTML(types[p.type])+'</div><h3>'+escapeHTML(p.title)+'</h3><p>📍 '+escapeHTML(p.city)+(p.date?' · 📅 '+escapeHTML(p.date):'')+'</p><p>'+escapeHTML(p.description)+'</p><p class="muted">Автор: '+escapeHTML(p.author)+' · '+escapeHTML(p.created.slice(0,10))+'</p></article>').join('')||'<article class="card"><h3>Пока нет объявлений</h3><p>Размести первую анкету свободного игрока, вакансию команды или турнир.</p></article>')+'</div>';
 }
 function newPost(type){
@@ -56,5 +56,6 @@ document.addEventListener('submit',e=>{
  }
  document.querySelector('#modal').close();
 });
+document.addEventListener('pole-shared-posts',render);
 render();
 })();
