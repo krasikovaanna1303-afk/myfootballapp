@@ -5,6 +5,7 @@ const seed = (window.POLE_SEED_FIELDS || []).map(f => ({...f, sourceVerified:!!f
 const config = window.POLE_SUPABASE || {};
 const backend = !!(config.url && config.anonKey && window.supabase?.createClient);
 const sb = backend ? window.supabase.createClient(config.url, config.anonKey) : null;
+window.POLE_SUPABASE_CLIENT = sb;
 const cityList = [
 ['Санкт-Петербург',59.9343,30.3351,12],['Москва',55.7558,37.6173,12],
 ['Казань',55.7961,49.1064,12],['Нижний Новгород',56.2965,43.9361,12],
