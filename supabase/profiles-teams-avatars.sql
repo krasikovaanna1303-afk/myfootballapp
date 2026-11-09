@@ -49,11 +49,11 @@ create or replace function public.handle_new_pole_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare v_formats text[];
 begin
- select coalesce(array_agg(value),array[]::text[]) into v_formats
+ select coalesce(array_agg(j.code),array[]::text[]) into v_formats
  from jsonb_array_elements_text(
    case when jsonb_typeof(new.raw_user_meta_data->'formats')='array'
         then new.raw_user_meta_data->'formats' else '[]'::jsonb end
- ) as values(value);
+ ) as j(code);
  if cardinality(v_formats)=0 then
    v_formats:=array[coalesce(nullif(new.raw_user_meta_data->>'format',''),'any')];
  end if;
