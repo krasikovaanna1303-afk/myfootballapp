@@ -274,8 +274,17 @@ function postPayload(form){
   note?.reportValidity();note?.focus();return null;
  }
 
- const reserved=new Set(['title','type','city','date','description','contact_platform','contact_handle']);
- const details={};
+ const selected=[...new Set(new FormData(form).getAll('formats'))];
+ if(!selected.length){
+  const group=form.querySelector('[data-community-formats]');
+  group?.scrollIntoView({behavior:'smooth',block:'center'});
+  group?.classList.add('field-error');
+  toast('Выбери формат футбола или «Любой»');
+  return null;
+ }
+ if(selected.includes('any')&&selected.length>1){toast('Выбери «Любой» или конкретные форматы');return null}
+ const reserved=new Set(['title','type','city','date','description','contact_platform','contact_handle','formats']);
+ const details={formats:selected};
  for(const [key,value] of Object.entries(d))if(!reserved.has(key)&&String(value).trim())details[key]=String(value).trim();
  return {type:d.type,title:d.title.trim(),city:d.city.trim(),date:d.date||'',description:d.description.trim(),details,contact_platform:d.contact_platform,contact_handle:contact};
 }
