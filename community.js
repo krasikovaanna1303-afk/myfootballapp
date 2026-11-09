@@ -37,7 +37,10 @@ const skills=[['','Выбери уровень'],['new','Новичок'],['amat
 const positions=[['','Выбери позицию'],['gk','Вратарь'],['def','Защитник'],['mid','Полузащитник'],['fwd','Нападающий'],['any','Любая позиция']];
 const formats=[['','Выбери формат'],['5v5','5 на 5'],['7v7','7 на 7'],['11v11','11 на 11'],['any','Любой']];
 const genders=[['','Выбери пол'],['female','Женский'],['male','Мужской']];
-const targetGenders=[['','Выбери'],['female','Женская команда'],['male','Мужская команда'],['any','Без ограничений']];
+const targetGenders=[['','Выбери'],['female','Женская команда'],['male','Мужская команда'],['any','Без ограничений по полу']];
+const ageGroups=[['','Выбери возрастную категорию'],['any','18 лет и старше (без ограничений)'],['18-24','18–24 года'],['25-34','25–34 года'],['35-44','35–44 года'],['45+','45 лет и старше']];
+const teamKinds=[['','Выбери тип команды'],['regular','Обычная женская команда (без ограничений)'],['moms','Команда мам']];
+const playerGoals=[['','Выбери цель поиска'],['training','Для регулярных тренировок'],['tournament','Для участия в турнирах'],['both','Для тренировок и турниров'],['matches','Для любительских матчей без постоянных тренировок']];
 const skillLabels=Object.fromEntries(skills),positionLabels=Object.fromEntries(positions),formatLabels=Object.fromEntries(formats),genderLabels=Object.fromEntries(genders);
 const rows=()=>read('community_posts');
 const input=(label,name,value='',attrs='required maxlength="100"')=>'<label>'+label+'<input name="'+name+'" value="'+escapeHTML(value)+'" '+attrs+'></label>';
@@ -47,12 +50,12 @@ const detailsLabel=(p)=>{
  const values=kind==='player'?[
   ['Возраст',d.age?' '+d.age+' лет':''],['Пол',genderLabels[d.gender]],['Уровень',skillLabels[d.skill]],
   ['Позиция',positionLabels[d.position]],['Формат',formatLabels[d.format]],
-  ['Район / удобное место',d.area],['Как часто готов(а) играть',({regular:'Регулярно',sometimes:'Время от времени',tournament:'Турниры',any:'Любой вариант'})[d.frequency]],
-  ['Когда удобно',d.availability]
+  ['Для чего ищет команду',Object.fromEntries(playerGoals)[d.goal]]
  ]:kind==='team'?[
   ['Команда',d.team_name],['Позиция',positionLabels[d.needed_position]],
-  ['Для кого',({female:'Женская команда',male:'Мужская команда',any:'Без ограничений'})[d.team_gender]],
-  ['Возрастная категория',({any:'Любой возраст от 16 лет','16-18':'16–18 лет','18-25':'18–25 лет','18-35':'18–35 лет','18+':'18+','35+':'35+'})[d.age_group]],
+  ['Состав команды',({female:'Женская команда',male:'Мужская команда',any:'Без ограничений по полу'})[d.team_gender]],
+  ['Тип женской команды',d.team_gender==='female'?Object.fromEntries(teamKinds)[d.female_team_kind]:''],
+  ['Возрастная категория',Object.fromEntries(ageGroups)[d.age_group]||({'16-18':'16–18 лет','18-25':'18–25 лет','18-35':'18–35 лет','18+':'18+','35+':'35+'})[d.age_group]],
   ['Уровень',skillLabels[d.required_skill]],['Формат',formatLabels[d.format]],
   ['Нужно игроков',d.spots?String(d.spots):''],
   ['Цель набора',({regular:'В постоянный состав',match:'На отдельный матч',tournament:'На конкретный турнир'})[d.purpose]],
@@ -68,10 +71,25 @@ const detailsLabel=(p)=>{
  ];
  return values.filter(([,v])=>v!==undefined&&v!==null&&String(v).trim()).map(([k,v])=>'<div><span class="muted">'+escapeHTML(k)+':</span> '+escapeHTML(String(v).trim())+'</div>').join('');
 };
+const normalizeContact=(platform,raw)=>{
+ let s=String(raw||'').trim();
+ if(platform==='telegram'){
+  s=s.replace(/^https?:\/\/(?:www\.)?t\.me\//i,'').replace(/^@/,'').replace(/\/$/,'');
+  return /^[A-Za-z0-9_]{5,32}$/.test(s)?s:null;
+ }
+ if(platform==='vk'){
+  s=s.replace(/^https?:\/\/(?:www\.)?(?:vk\.com|vkontakte\.ru)\//i,'').replace(/^vk\.com\//i,'').replace(/^@/,'').replace(/\/$/,'');
+  // В VK можно указать числовой ID, id12345 или короткий адрес профиля.
+  if(/^\d+$/.test(s))s='id'+s;
+  return /^[A-Za-z0-9_.]{3,50}$/.test(s)?s:null;
+ }
+ return null;
+};
 const contactUrl=p=>{
- const handle=String(p.contact_handle||'').trim().replace(/^@/,'');
- if(p.contact_platform==='telegram'&&/^[A-Za-z0-9_]{5,32}$/.test(handle))return 'https://t.me/'+handle;
- if(p.contact_platform==='vk'&&/^[A-Za-z0-9_.]{3,50}$/.test(handle))return 'https://vk.com/'+handle;
+ const handle=normalizeContact(p.contact_platform,p.contact_handle);
+ if(!handle)return '';
+ if(p.contact_platform==='telegram')return 'https://t.me/'+handle;
+ if(p.contact_platform==='vk')return 'https://vk.com/'+handle;
  return '';
 };
 function render(){
@@ -83,71 +101,111 @@ function render(){
  }).join('')||'<article class="card"><h3>Пока нет объявлений</h3><p>Размести анкету свободного игрока, запрос команды или турнир.</p></article>')+'</div>';
 }
 function contactFields(){
- return '<fieldset class="post-contact-fields"><legend>Как с тобой связаться</legend><p class="notice">Контакт будет виден всем посетителям объявления. Указывай только тот аккаунт, которым готов(а) поделиться.</p>'+
+ return '<fieldset class="post-contact-fields"><legend>Как с тобой связаться</legend><p class="notice">Контакт будет виден всем посетителям объявления. Указывай аккаунт, которым готов(а) поделиться.</p>'+
  selection('Мессенджер','contact_platform',[['','Выбери мессенджер'],['telegram','Telegram'],['vk','ВКонтакте']])+
- input('Имя пользователя или короткий адрес профиля','contact_handle','','required maxlength="50" placeholder="@username или username" autocomplete="off"')+
- '<p class="notice">Укажи никнейм без ссылки. Мы добавим ссылку на Telegram или ВКонтакте автоматически.</p></fieldset>';
+ input('Контакт в Telegram или VK','contact_handle','','required maxlength="100" placeholder="Выбери мессенджер выше" autocomplete="off"')+
+ '<p class="notice" id="post-contact-help">Для Telegram подойдёт @username, для VK — id123456, числовой ID или короткий адрес профиля.</p></fieldset>';
 }
+
 function newPost(type){
  if(!profile())return;
  const demo=window.POLE_SUPABASE_CLIENT?'После публикации объявление увидят другие пользователи.':'Пока это локальный черновик объявления.';
- const common='<label>Дополнительная информация<textarea name="description" maxlength="2000" minlength="10" required placeholder="Расскажи о пожеланиях, условиях и других деталях"></textarea></label>';
+ const common='<label>Дополнительная информация<textarea name="description" maxlength="2000" minlength="10" required placeholder="Уточни пожелания, особенности или условия"></textarea></label>';
  const userNick=escapeHTML(user?.name||'Игрок');
  let extra='';
  if(type==='player'){
-  extra='<p class="notice">Имя, возраст, пол, уровень игры, позиция, город и формат подставлены из твоей анкеты. При необходимости поправь их для этого объявления.</p>'+
-  '<p><b>Игрок:</b> '+userNick+'</p>'+
+  extra='<section class="community-form-section"><h3>Моя футбольная анкета</h3><p class="notice">Данные подставлены из личного кабинета. Здесь их можно изменить только для этого объявления.</p>'+
+  '<p class="community-post-nickname"><b>Игрок:</b> '+userNick+'</p>'+
   input('Возраст','age',user?.age||'','required type="number" min="16" max="100"')+
   selection('Пол','gender',genders,user?.gender)+selection('Уровень игры','skill',skills,user?.skill)+
   selection('Основная позиция','position',positions,user?.position)+selection('Предпочитаемый формат','format',formats,user?.format)+
-  input('Район или удобное место','area','','maxlength="100" placeholder="Например, север города"')+
-  selection('Как часто хочешь играть','frequency',[['','Выбери'],['regular','Регулярно'],['sometimes','Время от времени'],['tournament','Турниры'],['any','Любой вариант']])+
-  input('Когда удобно играть','availability','','maxlength="100" placeholder="Например, по будням после 19:00"');
+  '</section><section class="community-form-section"><h3>Какую команду ищу</h3>'+
+  selection('Для чего ищешь команду?','goal',playerGoals)+'</section>';
  }else if(type==='team'){
-  extra=input('Название команды','team_name','','required maxlength="100" placeholder="Название команды"')+
-   selection('На какую позицию нужен игрок','needed_position',positions)+
+  extra='<section class="community-form-section"><h3>О команде</h3>'+
+   input('Название команды','team_name','','required maxlength="100" placeholder="Название команды"')+
    selection('Тип команды','team_gender',targetGenders)+
-   selection('Возрастная категория','age_group',[['','Выбери'],['any','Любой возраст от 16 лет'],['16-18','16–18 лет'],['18-25','18–25 лет'],['18-35','18–35 лет'],['18+','18+'],['35+','35+']])+
-   selection('Желаемый уровень игры','required_skill',skills)+
+   '<div class="female-team-fields" id="post-female-team-fields" hidden>'+
+   selection('Какая это женская команда?','female_team_kind',teamKinds)+'</div>'+
    selection('Формат игры','format',formats)+
+   '</section><section class="community-form-section"><h3>Кого ищем</h3>'+
+   selection('На какую позицию нужен игрок','needed_position',[positions[0],positions[5],...positions.slice(1,5)])+
+   selection('Возрастная категория','age_group',ageGroups)+
+   selection('Желаемый уровень игры','required_skill',skills)+
    input('Сколько игроков нужно','spots','1','required type="number" min="1" max="50"')+
-   selection('Для чего нужен игрок','purpose',[['','Выбери'],['regular','В постоянный состав'],['match','На отдельный матч'],['tournament','На конкретный турнир']])+
+   '</section><section class="community-form-section"><h3>Для чего ищем игрока</h3>'+
+   selection('Цель набора','purpose',[['','Выбери цель набора'],['regular','Для регулярных тренировок и игр'],['tournament','Для участия в конкретном турнире'],['match','Для отдельного матча']])+
    '<div class="tournament-fields" id="post-tournament-fields" hidden>'+
    input('Название турнира','tournament_name','','maxlength="120" placeholder="Как называется турнир"')+
    input('Дата турнира','tournament_date','','type="date"')+
    input('Взнос за участие в турнире, ₽ за игрока (0 — бесплатно)','tournament_fee','0','type="number" min="0" max="1000000"')+'</div>'+
-   input('Где и когда играет команда','schedule','','maxlength="150" placeholder="Стадион, дни и время тренировок или игр"');
+   input('Где и когда играет команда','schedule','','maxlength="150" placeholder="Стадион, дни и время тренировок или игр"')+'</section>';
  }else if(type==='tournament'){
-  extra=input('Название турнира','tournament_name','','required maxlength="120"')+
+  extra='<section class="community-form-section"><h3>О турнире</h3>'+
+   input('Название турнира','tournament_name','','required maxlength="120"')+
    input('Дата турнира','date','','required type="date"')+
    selection('Формат игры','format',formats)+
    selection('Какие команды участвуют','team_gender',targetGenders)+
    input('Взнос за участие, ₽ за команду (0 — бесплатно)','tournament_fee','0','required type="number" min="0" max="1000000"')+
    input('Место проведения','venue','','required maxlength="150"')+
-   input('Количество свободных мест для команд','slots','','type="number" min="1" max="256"');
+   input('Количество свободных мест для команд','slots','','type="number" min="1" max="256"')+'</section>';
  }
  show(types[type],'<p class="notice">'+demo+'</p><form id="community-post-form"><input type="hidden" name="type" value="'+type+'">'+
+ '<section class="community-form-section"><h3>Объявление</h3>'+
  input('Заголовок','title',type==='player'?'Ищу футбольную команду':type==='team'?'Команде нужны игроки':'Открыта регистрация на турнир','required maxlength="100" minlength="2"')+
- input('Город','city',user?.city||'','required maxlength="80" minlength="2"')+
- extra+common+contactFields()+'<button class="primary post-submit">Опубликовать объявление</button></form>');
+ input('Город','city',user?.city||'','required maxlength="80" minlength="2"')+'</section>'+
+ extra+'<section class="community-form-section"><h3>Остальное</h3>'+common+'</section>'+
+ contactFields()+'<button class="primary post-submit">Опубликовать объявление</button></form>');
+ const form=document.querySelector('#community-post-form');
+ syncConditionalFields(form);
+ syncContactHelp(form);
 }
+function syncConditionalFields(form){
+ if(!form)return;
+ for(const [selector,fieldName,wrapId,targetValue] of [
+  ['select[name="purpose"]','tournament','#post-tournament-fields','tournament'],
+  ['select[name="team_gender"]','female','#post-female-team-fields','female']
+ ]){
+  const select=form.querySelector(selector),wrap=form.querySelector(wrapId);
+  if(!select||!wrap)continue;
+  const enabled=select.value===targetValue;
+  wrap.hidden=!enabled;
+  wrap.querySelectorAll('input,select').forEach(el=>{el.disabled=!enabled;el.required=enabled});
+ }
+}
+function syncContactHelp(form){
+ const platform=form?.elements.contact_platform?.value;
+ const handle=form?.elements.contact_handle,help=form?.querySelector('#post-contact-help');
+ if(!handle||!help)return;
+ if(platform==='vk'){
+  handle.placeholder='Например, id123456, 123456 или anna_sport';
+  help.textContent='ВКонтакте: числовой ID, id123456 или короткий адрес (также можно вставить ссылку vk.com/…).';
+ }else if(platform==='telegram'){
+  handle.placeholder='Например, @anna_football';
+  help.textContent='Telegram: имя пользователя с @ или ссылка t.me/username.';
+ }else{
+  handle.placeholder='Выбери мессенджер выше';
+  help.textContent='Для Telegram подойдёт @username, для VK — id123456, числовой ID или короткий адрес профиля.';
+ }
+ handle.setCustomValidity('');
+}
+
 document.addEventListener('click',e=>{const b=e.target.closest('[data-post-create]');if(b)newPost(b.dataset.postCreate)});
 document.addEventListener('change',e=>{
- if(!e.target.matches('#community-post-form select[name="purpose"]'))return;
- const form=e.target.form,wrap=form.querySelector('#post-tournament-fields'),isTournament=e.target.value==='tournament';
- if(!wrap)return;
- wrap.hidden=!isTournament;
- wrap.querySelectorAll('input').forEach(x=>{x.disabled=!isTournament;x.required=isTournament});
+ const form=e.target.closest('#community-post-form');if(!form)return;
+ if(e.target.matches('select[name="purpose"],select[name="team_gender"]'))syncConditionalFields(form);
+ if(e.target.matches('select[name="contact_platform"]'))syncContactHelp(form);
 });
+
 function postPayload(form){
  const d=Object.fromEntries(new FormData(form).entries());
- const contact=String(d.contact_handle||'').trim().replace(/^@/,'');
- const isTelegram=d.contact_platform==='telegram';
- if(!(isTelegram?/^[A-Za-z0-9_]{5,32}$/.test(contact):d.contact_platform==='vk'&&/^[A-Za-z0-9_.]{3,50}$/.test(contact))){
+ const contact=normalizeContact(d.contact_platform,d.contact_handle);
+ if(!contact){
   const note=form.querySelector('[name="contact_handle"]');
-  note?.setCustomValidity('Проверь никнейм: Telegram — от 5 до 32 символов, VK — от 3 до 50.');
+  note?.setCustomValidity('Проверь контакт: для Telegram нужен @username, для VK — числовой ID, id123456 или короткий адрес.');
   note?.reportValidity();note?.focus();return null;
  }
+
  const reserved=new Set(['title','type','city','date','description','contact_platform','contact_handle']);
  const details={};
  for(const [key,value] of Object.entries(d))if(!reserved.has(key)&&String(value).trim())details[key]=String(value).trim();
