@@ -49,7 +49,7 @@ async function refreshGames(){
    // Profile emails and authentication details are never queried or exposed.
    const {data:sessionResult}=await sb.auth.getSession();
    if(sessionResult?.session?.user && ids.length){
-     const {data:rosters,error:rosterError}=await sb.rpc('pole_game_rosters',{p_games:ids});
+     const {data:rosters,error:rosterError}=await sb.rpc('pole_game_rosters_v2',{p_games:ids});
      if(rosterError){errorNotice(rosterError,'составы игр')}
      else{
        clearError('составы игр');
@@ -74,7 +74,7 @@ async function refreshPosts(){
  try{
    const {data,error}=await sb.from('pole_posts').select('*').order('created_at',{ascending:false}).limit(200);
    if(error)throw error;
-   window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,details:p.details||{},contact_platform:p.contact_platform||'',contact_handle:p.contact_handle||'',author:p.author,created:p.created_at}));
+   window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,details:p.details||{},avatar_path:p.avatar_path||null,contact_platform:p.contact_platform||'',contact_handle:p.contact_handle||'',author:p.author,created:p.created_at}));
    document.dispatchEvent(new Event('pole-shared-posts'));
    clearError('объявления');
  }catch(e){errorNotice(e,'объявления')}
@@ -96,6 +96,7 @@ function appendFeedback(fieldId){
 const previousShow=window.showField;
 window.showField=function(id){previousShow(id);appendFeedback(id)};
 async function saveGame(form){
+ if(user?.account_type==='team'){toast('Создание игр доступно аккаунтам игроков');return}
  const u=await auth();if(!u)return;
  const d=Object.fromEntries(new FormData(form).entries());
  const all=[...fields,...(window.POLE_SEED_FIELDS||[]),...(window.POLE_PERMANENT_FIELDS||[]),...osm];
@@ -111,6 +112,7 @@ async function saveGame(form){
  document.querySelector('#modal')?.close();toast('Игра опубликована для всех пользователей');await refreshGames();
 }
 async function switchJoin(id){
+ if(user?.account_type==='team'){toast('Запись на игры доступна аккаунтам игроков');return}
  const u=await auth();if(!u)return;
  const item=games.find(x=>x.id===id);if(!item){await refreshGames();return}
  const method=item.attendees?.includes(u.id)?'pole_leave_game':'pole_join_game';
@@ -125,7 +127,7 @@ async function savePost(form){
   creator_id:u.id,type:payload.type,title:payload.title,city:payload.city,
   event_date:payload.date||null,description:payload.description,details:payload.details||{},
   contact_platform:payload.contact_platform,contact_handle:payload.contact_handle,
-  author:user?.name||u.user_metadata?.nickname||'Игрок'
+  avatar_path:user?.avatar_path||null,author:user?.name||u.user_metadata?.nickname||'Игрок'
  });
  if(error)throw error;
  document.querySelector('#modal')?.close();toast('Объявление опубликовано для всех пользователей');await refreshPosts();
