@@ -116,3 +116,31 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 #partner-lead-form .checkline{margin:18px 0 0;align-items:flex-start;gap:10px;line-height:1.5}
 #partner-lead-form .checkline input{margin-top:2px}
 #partner-lead-form button[type="submit"]{display:block;margin-top:24px}
+
+/* Подробные объявления: отдельные критерии, контакт и форма. */
+.community-posts{align-items:start}
+.community-post .post-details{display:grid;gap:7px;padding:11px 0;margin:9px 0;border-top:1px solid #e6ece3;border-bottom:1px solid #e6ece3;font-size:13px;line-height:1.4}
+.community-post .post-description{display:block;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere;color:#506655;line-height:1.55}
+.community-post .post-contact{display:inline-block;background:#c9f269;border-radius:11px;color:#193020;padding:12px 16px;font-weight:800;text-decoration:none;margin-top:8px;min-height:44px}
+.community-post .post-contact:hover{background:#bdf053}
+#community-post-form fieldset{border:1px solid #dce7d7;border-radius:12px;padding:12px 15px;margin:18px 0}
+#community-post-form legend{font-weight:800;padding:0 5px}
+#community-post-form .tournament-fields{border-left:3px solid #9fcc66;padding-left:14px;margin:12px 0}
+#community-post-form .tournament-fields[hidden]{display:none!important}
+#community-post-form .post-submit{margin-top:14px}
+#community-post-form .notice{line-height:1.5}
+@media(max-width:700px){.community-post .post-contact{width:100%;text-align:center}.community-post .post-details{gap:9px}}
+
+/* Чат запланированной игры: виден только записавшимся пользователям. */
+.game-chat-trigger{margin:10px 0 0 8px}
+.game-chat-info{color:#566e5f;line-height:1.5;font-size:13px;margin:14px 0}
+.game-chat-messages{height:min(42dvh,370px);min-height:200px;overflow:auto;overscroll-behavior:contain;border:1px solid #e1e8dd;background:#f8fbf5;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.game-chat-message{align-self:flex-start;max-width:91%;border:1px solid #e4ece0;background:white;padding:10px 13px;border-radius:12px;overflow-wrap:anywhere}
+.game-chat-message.mine{align-self:flex-end;background:#e8f6cf;border-color:#d6e9b6}
+.game-chat-meta{font-size:11px;color:#57705d}
+.game-chat-message p{white-space:pre-wrap;font-size:14px;color:#25382b;margin:6px 0 0;line-height:1.45}
+#pole-game-chat-form{margin-top:12px}
+#pole-game-chat-form label{margin-top:9px}
+#pole-game-chat-form textarea{width:100%;min-height:68px;resize:vertical;font-size:16px}
+#pole-game-chat-form button{margin-top:10px}
+@media(max-width:700px){.game-chat-trigger{display:block;margin:10px 0 0;width:100%}.game-chat-messages{height:min(45dvh,400px);padding:10px}.game-chat-message{max-width:95%}}
