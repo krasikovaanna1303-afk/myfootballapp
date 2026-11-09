@@ -194,7 +194,7 @@ document.addEventListener('click',async e=>{
   await refreshFeedback();await moderatorScreen();
  }catch(err){errorNotice(err);b.disabled=false}
 });
-document.addEventListener('pole-profile-updated',()=>{refreshGames()});
+document.addEventListener('pole-profile-updated',()=>{refreshGames();refreshPosts()});
 async function start(){await updateModeratorAccess();await Promise.all([refreshGames(),refreshPosts(),refreshFeedback()])}
 sb.auth.onAuthStateChange(()=>setTimeout(()=>{updateModeratorAccess();refreshGames()},100));
 start();
