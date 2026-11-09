@@ -299,10 +299,25 @@ function demoAccount(){
   modal('Анкета игрока · демо','<p class="notice">Сейчас эта анкета сохраняется только в твоём браузере, без паролей и общего аккаунта.</p><form id="pole-demo-profile" novalidate>'+formBits(user||{},false)+'<p class="form-validation-message" id="pole-demo-message" role="alert"></p><button class="primary" style="margin-top:18px">Сохранить анкету</button></form>');
   hydrateProfile(document.querySelector('#pole-demo-profile'),user||{});
 }
+function editAccountProfile(){
+ if(!sb||!user)return;
+ modal('Редактировать анкету',
+  '<p class="notice">Изменения сохраняются в твоём профиле и будут видны другим вошедшим пользователям, когда ты участвуешь в игре. Электронная почта не публикуется.</p>'+
+  '<form id="pole-profile-form" novalidate>'+formBits(user,false)+
+  '<p class="form-validation-message" role="alert" id="pole-profile-message"></p>'+
+  '<button class="primary" type="submit" style="margin-top:18px">Сохранить изменения</button></form>');
+ hydrateProfile(document.querySelector('#pole-profile-form'),user);
+}
 function authAccount(mode='login'){
   if(!sb)return demoAccount();
   if(user){
-    modal('Мой аккаунт','<p><b>'+E(user.name)+'</b></p><p>Твой профиль привязан к электронной почте через Supabase Auth.</p><button class="secondary" id="pole-logout">Выйти из аккаунта</button>');
+    const age=user.age?' · '+E(user.age)+' лет':'';
+    const city=user.city?' · '+E(user.city):'';
+    modal('Личный кабинет',
+      '<div class="account-profile-summary"><b>'+E(user.name)+'</b><p>'+E(user.gender==='female'?'Женский':user.gender==='male'?'Мужской':'Профиль игрока')+age+city+'</p></div>'+
+      '<p class="notice">Твоя анкета хранится в профиле «ПОЛЯ». Её можно изменить в любое время.</p>'+
+      '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">Редактировать анкету</button><button type="button" class="secondary" id="pole-logout">Выйти из аккаунта</button></div>');
+    document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
     document.querySelector('#pole-logout').onclick=async()=>{await sb.auth.signOut();user=null;save();document.querySelector('#account').textContent='Войти';document.querySelector('#modal').close();toast('Вы вышли из аккаунта')};
     return;
   }
@@ -310,7 +325,7 @@ function authAccount(mode='login'){
     '<div class="auth-tabs"><button class="secondary" id="switch-login">Войти</button> <button class="secondary" id="switch-signup">Зарегистрироваться</button></div>'+
     '<form id="pole-auth-form" data-mode="'+mode+'" novalidate>'+(mode==='signup'?formBits({},true):
       '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label><label>Пароль<input name="password" type="password" autocomplete="current-password" required></label>')+
-    (mode==='signup'?'<p class="notice">Если пропустишь поле, мы подскажем, что нужно заполнить. Никнейм и игровые данные анкеты (возраст при регистрации, пол, уровень, позиция, город, формат) будут видны другим вошедшим пользователям, когда ты запишешься на игру. Электронная почта не публикуется.</p>':'')+
+    (mode==='signup'?'<p class="notice">Если пропустишь поле, мы подскажем, что нужно заполнить. Никнейм и игровые данные анкеты (возраст, пол, уровень, позиция, город, формат) будут видны другим вошедшим пользователям, когда ты запишешься на игру. Электронная почта не публикуется.</p>':'')+
     '<button class="primary" style="margin-top:18px">'+(mode==='signup'?'Зарегистрироваться':'Войти')+'</button><p class="notice form-validation-message" id="pole-auth-message" role="alert"></p></form>'+
     '<p><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
   document.querySelector('#switch-login').onclick=()=>authAccount('login');
@@ -339,7 +354,7 @@ function checkProfileRequired(form){
   const label=invalid.closest('label')?.firstChild?.textContent?.trim()||invalid.name||'данные';
   const missing=!String(invalid.value||'').trim();
   const message=missing?'Заполни поле «'+label+'».':'Проверь правильность заполнения поля «'+label+'».';
-  const note=form.querySelector('#pole-auth-message, #pole-demo-message');
+  const note=form.querySelector('#pole-auth-message, #pole-demo-message, #pole-profile-message');
   if(note)note.textContent=message;
   invalid.classList.add('field-error');
   invalid.focus();
@@ -349,14 +364,54 @@ const account=document.querySelector('#account');
 account.onclick=()=>backend?authAccount():demoAccount();
 document.addEventListener('submit',async ev=>{
   const id=ev.target.id;
-  if(id!=='pole-demo-profile'&&id!=='pole-auth-form')return;
+  if(id!=='pole-demo-profile'&&id!=='pole-auth-form'&&id!=='pole-profile-form')return;
   ev.preventDefault();const f=ev.target,d=Object.fromEntries(new FormData(f).entries());
-  if(id==='pole-demo-profile' || (id==='pole-auth-form' && f.dataset.mode==='signup')){if(!checkProfileRequired(f))return; if(!['female','male'].includes(d.gender)){toast('Выбери пол');return}}
+  if(id==='pole-demo-profile' || id==='pole-profile-form' || (id==='pole-auth-form' && f.dataset.mode==='signup')){if(!checkProfileRequired(f))return; if(!['female','male'].includes(d.gender)){toast('Выбери пол');return}}
   if(id==='pole-auth-form'&&f.dataset.mode==='login'&&!checkProfileRequired(f))return;
   if(id==='pole-demo-profile'){
     user={id:user?.id||uid(),name:d.name.trim(),age:+d.age,gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),format:d.format,trips:d.trips==='yes'};
     save();account.textContent=user.name.slice(0,12);
     document.querySelector('#modal').close();toast('Демо-анкета сохранена только в этом браузере');return;
+  }
+  if(id==='pole-profile-form'){
+    const message=document.querySelector('#pole-profile-message');
+    const button=f.querySelector('button[type="submit"]');
+    button.disabled=true;button.textContent='Сохраняем…';
+    try{
+      const {data:current,error:authErr}=await sb.auth.getUser();
+      if(authErr||!current?.user)throw new Error('Необходимо войти в аккаунт повторно.');
+      const payload={
+        id:current.user.id,
+        nickname:d.name.trim(),
+        age_years_at_registration:Number(d.age),
+        gender:d.gender,
+        skill:d.skill,
+        position:d.position,
+        city:d.city.trim(),
+        format:d.format,
+        trips:d.trips==='yes',
+        updated_at:new Date().toISOString()
+      };
+      const {data:updated,error}=await sb.from('profiles')
+        .upsert(payload,{onConflict:'id'})
+        .select('id,nickname,age_years_at_registration,gender,skill,position,city,format,trips')
+        .single();
+      if(error)throw error;
+      user={
+        id:updated.id,name:updated.nickname,age:updated.age_years_at_registration,
+        gender:updated.gender,skill:updated.skill,position:updated.position,
+        city:updated.city,format:updated.format,trips:updated.trips
+      };
+      save();account.textContent=user.name.slice(0,12);
+      document.querySelector('#modal')?.close();
+      toast('Анкета успешно обновлена');
+      document.dispatchEvent(new Event('pole-profile-updated'));
+    }catch(err){
+      if(message)message.textContent='Не удалось сохранить анкету: '+(err.message||'попробуй ещё раз');
+    }finally{
+      button.disabled=false;button.textContent='Сохранить изменения';
+    }
+    return;
   }
   const message=document.querySelector('#pole-auth-message');
   const button=f.querySelector('button[type=submit],button.primary');button.disabled=true;
