@@ -45,6 +45,25 @@ async function refreshGames(){
      if(reply.error)throw reply.error;people=reply.data||[];
    }
    games=(rows||[]).map(x=>toGame(x,people));
+   // Only authenticated users may see the game's participants' selected profile fields.
+   // Profile emails and authentication details are never queried or exposed.
+   const {data:sessionResult}=await sb.auth.getSession();
+   if(sessionResult?.session?.user && ids.length){
+     const {data:rosters,error:rosterError}=await sb.rpc('pole_game_rosters',{p_games:ids});
+     if(rosterError){errorNotice(rosterError,'составы игр')}
+     else{
+       clearError('составы игр');
+       const byGame=new Map();
+       for(const player of rosters||[]){
+         if(!byGame.has(player.game_id))byGame.set(player.game_id,[]);
+         byGame.get(player.game_id).push(player);
+       }
+       for(const g of games)g.players=byGame.get(g.id)||[];
+     }
+   }else{
+     clearError('составы игр');
+     if(sessionResult?.session?.user)for(const g of games)g.players=[];
+   }
    renderGames();
    document.dispatchEvent(new Event('pole-shared-games'));
    clearError('игры');
@@ -83,7 +102,8 @@ async function saveGame(form){
  const selected=all.find(f=>String(f.id)===d.fieldId)||all.find(f=>f.name===d.field);
  const fieldId=String(selected?.id||d.fieldId||'').trim();
  if(!fieldId){toast('Выбери площадку из каталога');return}
- const payload={creator_id:u.id,field_id:fieldId,field_name:selected?.name||d.field,title:d.title.trim(),game_date:d.date,game_time:d.time,capacity:Number(d.capacity),description:d.description||'',organizer:user?.name||u.user_metadata?.nickname||'Игрок'};
+ if(d.unlimited!=='on'&&(!Number.isInteger(Number(d.capacity))||Number(d.capacity)<2||Number(d.capacity)>100)){toast('Укажи количество игроков от 2 до 100 или выбери «Без ограничений»');return}
+ const payload={creator_id:u.id,field_id:fieldId,field_name:selected?.name||d.field,title:d.title.trim(),game_date:d.date,game_time:d.time,capacity:d.unlimited==='on'?null:Number(d.capacity),description:d.description||'',organizer:user?.name||u.user_metadata?.nickname||'Игрок'};
  const {data,error}=await sb.from('pole_games').insert(payload).select('id').single();
  if(error)throw error;
  const joined=await sb.rpc('pole_join_game',{p_game:data.id});
