@@ -97,3 +97,17 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
   .filters>.city-search button{padding-left:11px;padding-right:11px}
   .community-toolbar{grid-template-columns:minmax(0,1fr)}
 }
+
+/* Игры: понятная вместимость, список игроков и сообщения об ошибках анкеты. */
+.game-unlimited-choice{display:flex;align-items:center;gap:10px;margin:17px 0 8px;font-size:14px}
+.game-unlimited-choice input{width:20px;height:20px;flex:none;margin:0}
+.game-capacity-label[hidden]{display:none!important}
+.game-roster{border:1px solid #dfe8d9;border-radius:11px;padding:10px 13px;margin:13px 0;background:#fbfdf9}
+.game-roster summary{cursor:pointer;font-weight:750;color:#23452f;line-height:1.4}
+.game-roster-list{display:grid;gap:8px;margin-top:12px}
+.game-player{border-radius:10px;background:white;border:1px solid #e6ece3;padding:10px 12px}
+.game-player b{font-size:14px}
+.game-player p{font-size:12px;margin:6px 0 0;line-height:1.55;color:#526957;overflow-wrap:anywhere}
+.form-validation-message:not(:empty){color:#9b321e;font-size:13px;font-weight:650;margin:12px 0}
+.field-error{border:2px solid #ba4130!important;outline-offset:2px}
+@media(max-width:700px){.game-roster{padding:12px}.game-player{padding:12px}.game-capacity-label input{min-height:46px}}
