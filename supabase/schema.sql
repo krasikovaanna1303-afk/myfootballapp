@@ -5,7 +5,7 @@ create table if not exists public.profiles (
   nickname text not null check (char_length(nickname) between 2 and 40),
   age_years_at_registration integer check (age_years_at_registration between 16 and 100),
   registration_year integer not null default extract(year from now())::integer,
-  gender text,
+  gender text not null check (gender in ('female','male')),
   skill text not null,
   position text,
   city text not null,
