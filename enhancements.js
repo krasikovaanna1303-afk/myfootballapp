@@ -279,210 +279,301 @@ document.querySelector('#search').oninput=()=>renderFields();
 document.querySelector('#filter').onchange=()=>renderFields();
 document.querySelector('#include-multisport').onchange=()=>renderFields();
 document.querySelector('#refresh-pitches').onclick=()=>{lastLoadedBounds=null;loadOSM()};
-const formBits=(u={},withCredentials=false)=> {
-  const val=(k)=>E(u[k]||'');
-  return (withCredentials?'<label>Электронная почта<input type="email" name="email" autocomplete="email" required></label><label>Пароль (минимум 8 символов)<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>':'')+
-  '<label>Имя или никнейм<input name="name" autocomplete="nickname" maxlength="40" minlength="2" required value="'+val('name')+'"></label>'+
-  '<label>Возраст (лет)<input name="age" type="number" min="16" max="100" required value="'+val('age')+'"></label>'+
-  '<label>Пол<select name="gender" required><option value="" disabled selected>Выбери пол</option><option value="female">Женский</option><option value="male">Мужской</option></select></label>'+
-  '<label>Уровень игры<select name="skill" required><option value="" disabled selected>Выбери уровень</option><option value="new">Новичок</option><option value="amateur">Любитель</option><option value="confident">Уверенно играю</option><option value="advanced">Продвинутый</option></select></label>'+
-  '<label>Предпочитаемая позиция<select name="position" required><option value="" disabled selected>Выбери позицию</option><option value="any">Любая позиция</option><option value="gk">Вратарь</option><option value="def">Защитник</option><option value="mid">Полузащитник</option><option value="fwd">Нападающий</option></select></label>'+
-  '<label>Город<input name="city" maxlength="80" required value="'+val('city')+'" placeholder="Например, Санкт-Петербург"></label>'+
-  '<label>Любимый формат<select name="format" required><option value="" disabled selected>Выбери формат</option><option value="any">Любой</option><option value="5v5">5 на 5</option><option value="7v7">7 на 7</option><option value="11v11">11 на 11</option></select></label>'+
-  '<label>Интересны футбольные поездки в другие города?<select name="trips" required><option value="" disabled selected>Выбери ответ</option><option value="yes">Да</option><option value="no">Нет</option></select></label>';
+
+/* Современный кабинет игрока / команды, форматы и необязательные фото. */
+const POLE_FORMATS=[['5v5','5×5'],['6v6','6×6'],['7v7','7×7'],['8v8','8×8'],['11v11','11×11'],['any','Любой']];
+const POLE_FORMAT_NAMES=Object.fromEntries(POLE_FORMATS);
+const POLE_SKILL_NAMES={new:'Новичок',amateur:'Любитель',confident:'Уверенно играю',advanced:'Продвинутый'};
+const POLE_POSITION_NAMES={any:'Любая позиция',gk:'Вратарь',def:'Защитник',mid:'Полузащитник',fwd:'Нападающий'};
+const POLE_AGE_NAMES={any:'18 лет и старше', '18-24':'18–24 года','25-34':'25–34 года','35-44':'35–44 года','45+':'45 лет и старше'};
+const POLE_GENDER_NAMES={female:'Женская',male:'Мужская',any:'Без ограничений'};
+const POLE_ACCOUNT_FORMATS=o=>{
+ const list=Array.isArray(o?.formats)&&o.formats.length?o.formats:(o?.format?[o.format]:[]);
+ const clean=[...new Set(list.filter(x=>POLE_FORMAT_NAMES[x]))];
+ return clean.includes('any')?['any']:clean;
 };
-function hydrateProfile(f,d){
-  for(const n of ['gender','skill','position','format']){if(f.elements[n] && d[n]!=null && (n!=='gender'||['female','male'].includes(d[n])))f.elements[n].value=d[n]}
-  if(f.elements.trips && typeof d.trips==='boolean')f.elements.trips.value=d.trips?'yes':'no';
+const POLE_FORMAT_LABEL=o=>POLE_ACCOUNT_FORMATS(o).map(x=>POLE_FORMAT_NAMES[x]).join(', ')||'Не указано';
+const formatFields=selected=>{
+ const vals=POLE_ACCOUNT_FORMATS(selected);
+ return '<fieldset class="profile-formats" data-format-group><legend>Форматы футбола</legend><p class="notice">Выбери один или несколько. «Любой» заменяет конкретные форматы.</p><div class="format-choices">'+POLE_FORMATS.map(([v,title])=>'<label class="format-option"><input type="checkbox" name="formats" value="'+v+'" '+(vals.includes(v)?'checked':'')+'><span>'+title+'</span></label>').join('')+'</div></fieldset>';
+};
+window.POLE_AVATAR_URL=path=>{
+ if(!sb||!path||!/^[0-9a-f-]{36}\/[A-Za-z0-9._-]+\.(?:png|jpe?g|webp)$/.test(String(path)))return '';
+ return sb.storage.from('pole-avatars').getPublicUrl(String(path)).data.publicUrl||'';
+};
+const avatarHTML=(person,size='lg')=>{
+ const letter=Array.from(String(person?.name||'И').trim())[0]?.toUpperCase()||'И';
+ const url=window.POLE_AVATAR_URL(person?.avatar_path);
+ return '<span class="pole-avatar '+size+'">'+(url?'<img src="'+E(url)+'" alt="Фото профиля" loading="lazy">':E(letter))+'</span>';
+};
+const inputLabel=(label,name,val='',opts='required')=>'<label>'+label+'<input name="'+name+'" value="'+E(val)+'" '+opts+'></label>';
+const selectLabel=(label,name,options,selected='')=>'<label>'+label+'<select name="'+name+'" required>'+options.map(([value,title])=>'<option value="'+E(value)+'"'+(!value?' disabled':'')+(value===selected?' selected':'')+'>'+E(title)+'</option>').join('')+'</select></label>';
+const playerFormBits=(o={})=>{
+ const val=k=>E(o[k]??'');
+ return inputLabel('Имя или никнейм','name',o.name||'','required maxlength="40" minlength="2" autocomplete="nickname"')+
+  '<label>Возраст (лет)<input name="age" type="number" min="16" max="100" required value="'+val('age')+'"></label>'+
+  selectLabel('Пол','gender',[['','Выбери пол'],['female','Женский'],['male','Мужской']],o.gender||'')+
+  selectLabel('Уровень игры','skill',[['','Выбери уровень'],...Object.entries(POLE_SKILL_NAMES)],o.skill||'')+
+  selectLabel('Позиция','position',[['','Выбери позицию'],...Object.entries(POLE_POSITION_NAMES)],o.position||'')+
+  inputLabel('Город','city',o.city||'','required maxlength="80" minlength="2" placeholder="Например, Санкт-Петербург"')+
+  formatFields(o)+
+  selectLabel('Интересны поездки в другие города?','trips',[['','Выбери ответ'],['yes','Да'],['no','Нет']],typeof o.trips==='boolean'?(o.trips?'yes':'no'):'')+
+  '<label>О себе <span class="optional-label">(по желанию)</span><textarea name="bio" maxlength="500" rows="3" placeholder="Немного о себе, своём опыте и интересах">'+val('bio')+'</textarea></label>';
+};
+const teamFormBits=(o={})=>{
+ const gender=o.team_gender||o.gender||'';
+ return inputLabel('Название команды','team_name',o.name||'','required maxlength="100" minlength="2" placeholder="Например, ФК Нева"')+
+  inputLabel('Город команды','city',o.city||'','required maxlength="80" minlength="2" placeholder="Город"')+
+  selectLabel('Тип команды','team_gender',[['','Выбери'],['female','Женская команда'],['male','Мужская команда'],['any','Без ограничений по полу']],gender)+
+  '<div class="team-female-kind" data-team-female '+(gender==='female'?'':'hidden')+'>'+
+  selectLabel('Какая женская команда?','female_team_kind',[['','Выбери тип'],['regular','Обычная (без ограничений)'],['moms','Команда мам']],o.female_team_kind||'')+'</div>'+
+  selectLabel('Возрастная категория','age_group',[['','Выбери категорию'],...Object.entries(POLE_AGE_NAMES)],o.age_group||'any')+
+  formatFields(o)+
+  '<label>О команде <span class="optional-label">(по желанию)</span><textarea name="bio" maxlength="500" rows="3" placeholder="Как и где тренируетесь, ваши цели и атмосфера">'+E(o.bio||'')+'</textarea></label>';
+};
+const formBits=(o={},credentials=false)=> (credentials?'<label>Электронная почта<input type="email" name="email" autocomplete="email" required></label><label>Пароль (минимум 8 символов)<input type="password" name="password" autocomplete="new-password" minlength="8" required></label>':'')+playerFormBits(o);
+function syncFormatOptions(form){
+ form?.querySelectorAll('input[name="formats"]').forEach(box=>box.addEventListener('change',()=>{
+   if(box.checked&&box.value==='any')form.querySelectorAll('input[name="formats"]').forEach(b=>{if(b!==box)b.checked=false});
+   else if(box.checked)form.querySelector('input[name="formats"][value="any"]').checked=false;
+   form.querySelectorAll('.format-option').forEach(label=>label.classList.toggle('selected',!!label.querySelector('input')?.checked));
+ }));
+ form?.querySelectorAll('.format-option').forEach(label=>label.classList.toggle('selected',!!label.querySelector('input')?.checked));
 }
+function syncTeamKind(form){
+ const field=form?.querySelector('[data-team-female]');
+ const select=form?.querySelector('[name="team_gender"]');
+ if(!field||!select)return;
+ const enabled=select.value==='female';
+ field.hidden=!enabled;
+ field.querySelectorAll('select,input').forEach(el=>{el.disabled=!enabled;el.required=enabled});
+}
+function setupProfileForm(form){
+ if(!form)return;
+ syncFormatOptions(form);
+ form.querySelector('[name="team_gender"]')?.addEventListener('change',()=>syncTeamKind(form));
+ syncTeamKind(form);
+}
+function validateProfileForm(form){
+ form.querySelectorAll('.field-error').forEach(x=>x.classList.remove('field-error'));
+ const invalid=[...form.querySelectorAll('[required]')].find(el=>!el.disabled&&(!String(el.value||'').trim()||!el.checkValidity()));
+ let msg='',focus=null;
+ if(invalid){
+  const label=invalid.closest('label')?.firstChild?.textContent?.trim()||invalid.name;
+  msg=invalid.value?'Проверь поле «'+label+'».':'Заполни поле «'+label+'».';
+  focus=invalid;invalid.classList.add('field-error');
+ }else if(form.querySelector('[data-format-group]')&&!new FormData(form).getAll('formats').length){
+  msg='Выбери хотя бы один формат футбола или «Любой».';
+  focus=form.querySelector('[data-format-group]');focus.classList.add('field-error');
+ }
+ const node=form.querySelector('.form-validation-message');
+ if(node)node.textContent=msg;
+ focus?.focus();return !msg;
+}
+function readProfileForm(form){const data=Object.fromEntries(new FormData(form).entries());data.formats=[...new Set(new FormData(form).getAll('formats'))];if(data.formats.includes('any'))data.formats=['any'];return data}
 function demoAccount(){
-  modal('Анкета игрока · демо','<p class="notice">Сейчас эта анкета сохраняется только в твоём браузере, без паролей и общего аккаунта.</p><form id="pole-demo-profile" novalidate>'+formBits(user||{},false)+'<p class="form-validation-message" id="pole-demo-message" role="alert"></p><button class="primary" style="margin-top:18px">Сохранить анкету</button></form>');
-  hydrateProfile(document.querySelector('#pole-demo-profile'),user||{});
+ modal('Анкета игрока · демо','<p class="notice">Анкета сохраняется только на этом устройстве, пока не подключён сервер.</p><form id="pole-demo-profile" novalidate>'+playerFormBits(user||{})+'<p class="form-validation-message" role="alert"></p><button type="submit" class="primary">Сохранить анкету</button></form>');
+ setupProfileForm(document.querySelector('#pole-demo-profile'));
 }
-const profileSkillNames={new:'Новичок',amateur:'Любитель',confident:'Уверенно играю',advanced:'Продвинутый'};
-const profilePositionNames={any:'Любая позиция',gk:'Вратарь',def:'Защитник',mid:'Полузащитник',fwd:'Нападающий'};
-const profileFormatNames={any:'Любой', '5v5':'5 на 5','7v7':'7 на 7','11v11':'11 на 11'};
+const account=document.querySelector('#account');
+const accountItem=(label,value)=>'<div class="account-detail"><span class="account-detail-label">'+E(label)+'</span><strong class="account-detail-value">'+E(value??'Не указано')+'</strong></div>';
 function showAccountProfile(){
  if(!user)return;
- const item=(label,value)=>'<div class="account-detail"><span class="account-detail-label">'+E(label)+'</span><span class="account-detail-value">'+E(value===undefined||value===null||value===''?'Не указано':value)+'</span></div>';
- const firstLetter=Array.from(String(user.name||'И').trim())[0]?.toLocaleUpperCase('ru-RU')||'И';
+ const isTeam=user.account_type==='team';
+ const photo=avatarHTML(user,'lg');
+ const detail=isTeam?
+  accountItem('Тип команды',POLE_GENDER_NAMES[user.team_gender]||'Не указано')+
+  (user.team_gender==='female'?accountItem('Женская команда',user.female_team_kind==='moms'?'Команда мам':'Обычная команда'):'')+
+  accountItem('Возрастная категория',POLE_AGE_NAMES[user.age_group]||'Не указано')+
+  accountItem('Город',user.city):
+  accountItem('Возраст',user.age?user.age+' лет':'Не указано')+
+  accountItem('Пол',user.gender==='female'?'Женский':'Мужской')+
+  accountItem('Уровень',POLE_SKILL_NAMES[user.skill]||'Не указано')+
+  accountItem('Позиция',POLE_POSITION_NAMES[user.position]||'Не указано');
  modal('Личный кабинет',
-  '<div class="account-identity"><div class="account-avatar" aria-hidden="true">'+E(firstLetter)+'</div><div class="account-identity-text"><div class="account-identity-caption">Моя анкета игрока</div><strong>'+E(user.name||'Игрок')+'</strong><span>'+E(user.city||'Город не указан')+'</span></div></div>'+
-  '<div class="account-section-title">Личные данные</div>'+
-  '<div class="account-detail-grid">'+
-  item('Возраст',user.age?user.age+' лет':null)+
-  item('Пол',user.gender==='female'?'Женский':user.gender==='male'?'Мужской':null)+
-  item('Город',user.city)+
-  '</div>'+
-  '<div class="account-section-title">Футбольная анкета</div>'+
-  '<div class="account-detail-grid">'+
-  item('Уровень игры',profileSkillNames[user.skill]||user.skill)+
-  item('Позиция',profilePositionNames[user.position]||user.position)+
-  item('Формат',profileFormatNames[user.format]||user.format)+
-  item('Футбольные поездки',user.trips==null?null:user.trips?'Интересны':'Не интересны')+
-  '</div>'+
-  '<p class="account-privacy-note">Когда ты записываешься на игру, другие участники могут видеть данные твоей игровой анкеты. Электронная почта не публикуется.</p>'+
-  '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Изменить анкету</button><button type="button" class="secondary" id="pole-logout">Выйти из аккаунта</button></div>');
+  '<div class="account-identity premium">'+photo+'<div class="account-identity-text"><div class="account-identity-caption">'+(isTeam?'Профиль команды':'Профиль игрока')+'</div><strong>'+E(user.name||'Без названия')+'</strong><span>📍 '+E(user.city||'Город не указан')+'</span></div></div>'+
+  '<div class="account-photo-row"><span class="notice">'+(user.avatar_path?'Фото видно другим посетителям твоих объявлений.':'Можно добавить фотографию или логотип команды.')+'</span><button type="button" class="secondary" id="pole-change-photo">📷 '+(user.avatar_path?'Изменить фото':'Добавить фото')+'</button></div>'+
+  '<div class="account-section-title">'+(isTeam?'О команде':'Моя анкета')+'</div>'+
+  '<div class="account-detail-grid">'+detail+'</div>'+
+  '<div class="account-section-title">Футбольные предпочтения</div>'+
+  '<div class="account-detail-grid">'+accountItem('Форматы',POLE_FORMAT_LABEL(user))+(isTeam?'':accountItem('Поездки',user.trips?'Интересны':'Не интересны'))+'</div>'+
+  (user.bio?'<div class="account-about"><strong>О себе</strong><p>'+E(user.bio)+'</p></div>':'')+
+  '<p class="account-privacy-note">Фотография загружается только по желанию. Электронная почта остаётся скрытой.</p>'+
+  '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Редактировать анкету</button><button type="button" class="secondary" id="pole-logout">Выйти</button></div>');
  document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
- document.querySelector('#pole-logout').onclick=async()=>{
-  await sb.auth.signOut();user=null;save();
-  document.querySelector('#account').textContent='Войти';
-  document.querySelector('#modal').close();toast('Вы вышли из аккаунта');
- };
+ document.querySelector('#pole-change-photo').onclick=editAccountProfile;
+ document.querySelector('#pole-logout').onclick=async()=>{await sb.auth.signOut();user=null;save();account.textContent='Войти';document.querySelector('#modal').close();toast('Ты вышел(а) из аккаунта')};
 }
 function editAccountProfile(){
- if(!sb||!user)return;
- modal('Редактировать анкету',
-  '<p class="account-edit-intro">Обнови свои данные. Изменения сохранятся в «ПОЛЕ» и будут применяться к новым объявлениям и отображению в составах игр.</p>'+
-  '<form id="pole-profile-form" novalidate>'+formBits(user,false)+
-  '<p class="form-validation-message" role="alert" id="pole-profile-message"></p>'+
-  '<div class="account-edit-actions"><button class="primary" type="submit">Сохранить изменения</button><button class="secondary" type="button" id="pole-cancel-profile">Назад в кабинет</button></div></form>');
- const form=document.querySelector('#pole-profile-form');
- hydrateProfile(form,user);
- // Две тематические группы с привычным расположением полей.
- const labels=[...form.querySelectorAll(':scope > label')];
- const wrapper=document.createElement('div');
- wrapper.className='account-edit-sections';
- const groups=[
-  {title:'О тебе',keys:['name','age','gender','city']},
-  {title:'Футбольные предпочтения',keys:['skill','position','format','trips']}
- ];
- for(const group of groups){
-  const section=document.createElement('section');
-  section.className='account-edit-section';
-  const heading=document.createElement('h3');heading.textContent=group.title;section.appendChild(heading);
-  const grid=document.createElement('div');grid.className='account-edit-grid';
-  for(const key of group.keys){
-   const label=labels.find(l=>l.querySelector('[name="'+key+'"]'));
-   if(!label)continue;
-   if(['name','city','trips'].includes(key))label.classList.add('wide-field');
-   grid.appendChild(label);
-  }
-  section.appendChild(grid);wrapper.appendChild(section);
- }
- form.prepend(wrapper);
+ if(!user||!sb)return;
+ const isTeam=user.account_type==='team';
+ modal('Редактировать '+(isTeam?'команду':'анкету'),
+ '<p class="account-edit-intro">Изменения сохранятся в «ПОЛЕ» и будут видны в новых объявлениях и соответствующих карточках.</p>'+
+ '<form id="pole-profile-form" novalidate><div class="account-edit-section"><h3>'+(isTeam?'Информация о команде':'Личные данные и футбол')+'</h3>'+
+ (isTeam?teamFormBits({...user,team_gender:user.team_gender}):playerFormBits(user))+
+ '</div><div class="account-edit-section"><h3>Фото '+(isTeam?'или логотип':'профиля')+' <span class="optional-label">(по желанию)</span></h3>'+
+ '<p class="notice">JPG, PNG или WebP до 2 МБ. Фото будет видно посетителям объявлений и участникам игр. Можно оставить без фотографии.</p>'+
+ '<input id="pole-photo-input" name="avatar" type="file" accept="image/jpeg,image/png,image/webp">'+
+ (user.avatar_path?'<label class="checkline"><input type="checkbox" name="remove_avatar"> Удалить текущее фото</label>':'')+
+ '</div><p class="form-validation-message" role="alert"></p>'+
+ '<div class="account-edit-actions"><button class="primary" type="submit">Сохранить изменения</button><button class="secondary" type="button" id="pole-cancel-profile">Назад</button></div></form>');
+ setupProfileForm(document.querySelector('#pole-profile-form'));
  document.querySelector('#pole-cancel-profile').onclick=showAccountProfile;
 }
 function authAccount(mode='login'){
-  if(!sb)return demoAccount();
-  if(user){showAccountProfile();return}
-  modal(mode==='signup'?'Регистрация в ПОЛЕ':'Вход в ПОЛЕ',
-    '<div class="auth-tabs"><button class="secondary" id="switch-login">Войти</button> <button class="secondary" id="switch-signup">Зарегистрироваться</button></div>'+
-    '<form id="pole-auth-form" data-mode="'+mode+'" novalidate>'+(mode==='signup'?formBits({},true):
-      '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label><label>Пароль<input name="password" type="password" autocomplete="current-password" required></label>')+
-    (mode==='signup'?'<p class="notice">Если пропустишь поле, мы подскажем, что нужно заполнить. Никнейм и игровые данные анкеты (возраст, пол, уровень, позиция, город, формат) будут видны другим вошедшим пользователям, когда ты запишешься на игру. Электронная почта не публикуется.</p>':'')+
-    '<button class="primary" style="margin-top:18px">'+(mode==='signup'?'Зарегистрироваться':'Войти')+'</button><p class="notice form-validation-message" id="pole-auth-message" role="alert"></p></form>'+
-    '<p><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
-  document.querySelector('#switch-login').onclick=()=>authAccount('login');
-  document.querySelector('#switch-signup').onclick=()=>authAccount('signup');
-  document.querySelector('#pole-resend-confirmation').onclick=async e=>{
-    const button=e.currentTarget;
-    const email=document.querySelector('#pole-auth-form input[name="email"]')?.value.trim();
-    const note=document.querySelector('#pole-auth-message');
-    if(!email){note.textContent='Сначала введи электронную почту в форме выше.';return}
-    button.disabled=true;
-    note.textContent='Запрашиваем новое письмо…';
-    try{
-      const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/'}});
-      if(error)throw error;
-      note.textContent='Запрос принят. Проверь входящие и спам. Если письмо не появится, проверь ограничения почты в Supabase.';
-    }catch(err){
-      note.textContent='Ошибка отправки: '+(err.message||'не удалось отправить письмо')+(err.code?' (код: '+err.code+')':'');
-    }finally{button.disabled=false}
+ if(!sb)return demoAccount();
+ if(user){showAccountProfile();return}
+ const signup=mode==='signup';
+ modal(signup?'Регистрация в ПОЛЕ':'Вход в ПОЛЕ',
+  '<div class="auth-tabs"><button type="button" class="secondary" id="switch-login">Войти</button><button type="button" class="secondary" id="switch-signup">Зарегистрироваться</button></div>'+
+  '<form id="pole-auth-form" data-mode="'+mode+'" novalidate>'+
+  (signup?'<div class="account-type-picker"><span>Кто регистрируется?</span><div><button class="active" type="button" data-signup-type="player">Игрок</button><button type="button" data-signup-type="team">Команда</button></div></div>':'')+
+  (signup?'<input type="hidden" name="account_type" value="player">':'')+
+  '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label>'+
+  '<label>Пароль'+(signup?' (минимум 8 символов)':'')+'<input type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" '+(signup?'minlength="8" ':'')+'required></label>'+
+  (signup?'<div data-signup-section="player">'+playerFormBits({})+'</div><div data-signup-section="team" hidden>'+teamFormBits({})+'</div><p class="notice">Фотографию можно добавить после подтверждения почты в личном кабинете.</p>':'')+
+  '<p class="form-validation-message" role="alert"></p><button class="primary" type="submit" style="margin-top:16px">'+(signup?'Зарегистрироваться':'Войти')+'</button></form>'+
+  '<p><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
+ document.querySelector('#switch-login').onclick=()=>authAccount('login');
+ document.querySelector('#switch-signup').onclick=()=>authAccount('signup');
+ const form=document.querySelector('#pole-auth-form');
+ if(signup){
+  form.querySelectorAll('[data-signup-section]').forEach(el=>setupProfileForm(el));
+  const updateType=type=>{
+   form.elements.account_type.value=type;
+   form.querySelectorAll('[data-signup-section]').forEach(section=>{
+    const on=section.dataset.signupSection===type;section.hidden=!on;
+    section.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=!on);
+   });
+   form.querySelectorAll('[data-signup-type]').forEach(b=>b.classList.toggle('active',b.dataset.signupType===type));
+   form.querySelector('.form-validation-message').textContent='';
   };
+  form.querySelectorAll('[data-signup-type]').forEach(b=>b.onclick=()=>updateType(b.dataset.signupType));
+  updateType('player');
+ }
+ document.querySelector('#pole-resend-confirmation').onclick=async event=>{
+  const button=event.currentTarget,note=form.querySelector('.form-validation-message');
+  const email=form.elements.email.value.trim();
+  if(!email){note.textContent='Сначала укажи электронную почту.';return}
+  button.disabled=true;note.textContent='Запрашиваем письмо…';
+  try{
+   const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/'}});
+   if(error)throw error;
+   note.textContent='Запрос принят. Проверь входящие и папку «Спам».';
+  }catch(error){note.textContent='Ошибка отправки: '+(error.message||'повтори попытку')}
+  finally{button.disabled=false}
+ };
 }
-function checkProfileRequired(form){
-  form.querySelectorAll('.field-error').forEach(el=>el.classList.remove('field-error'));
-  const required=[...form.querySelectorAll('[required]')];
-  const invalid=required.find(el=>!String(el.value||'').trim()||!el.checkValidity());
-  if(!invalid)return true;
-  const label=invalid.closest('label')?.firstChild?.textContent?.trim()||invalid.name||'данные';
-  const missing=!String(invalid.value||'').trim();
-  const message=missing?'Заполни поле «'+label+'».':'Проверь правильность заполнения поля «'+label+'».';
-  const note=form.querySelector('#pole-auth-message, #pole-demo-message, #pole-profile-message');
-  if(note)note.textContent=message;
-  invalid.classList.add('field-error');
-  invalid.focus();
-  return false;
+async function uploadOptionalPhoto(form,uid,previous){
+ const file=form.elements.avatar?.files?.[0];
+ const remove=!!form.elements.remove_avatar?.checked;
+ if(!file)return remove?null:previous||null;
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('Выбери JPG, PNG или WebP.');
+ if(file.size>2*1024*1024)throw new Error('Фото должно быть меньше 2 МБ.');
+ if(file.size<=0)throw new Error('Выбран пустой файл.');
+ const extension=file.type==='image/jpeg'?'jpg':file.type==='image/png'?'png':'webp';
+ const path=uid+'/avatar-'+crypto.randomUUID()+'.'+extension;
+ const {error}=await sb.storage.from('pole-avatars').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
+ if(error)throw error;
+ return path;
 }
-const account=document.querySelector('#account');
+async function syncAccount(){
+ if(!sb)return;
+ const {data:{user:authenticated},error}=await sb.auth.getUser();
+ if(error||!authenticated){user=null;save();account.textContent='Войти';return}
+ const meta=authenticated.user_metadata||{};
+ const {data:player,error:playerError}=await sb.from('profiles').select('nickname,age_years_at_registration,gender,skill,position,city,format,formats,trips,bio,avatar_path').eq('id',authenticated.id).maybeSingle();
+ if(playerError)console.warn('Не удалось загрузить анкету игрока',playerError);
+ if(player){
+  user={id:authenticated.id,account_type:'player',name:player.nickname,age:player.age_years_at_registration,
+   gender:player.gender,skill:player.skill,position:player.position,city:player.city,
+   format:player.format,formats:player.formats?.length?player.formats:meta.formats||[player.format||'any'],
+   trips:player.trips,bio:player.bio||'',avatar_path:player.avatar_path};
+ }else if(meta.account_type==='team'){
+  const {data:team,error:teamError}=await sb.from('pole_teams').select('name,city,gender,female_team_kind,age_group,formats,bio,avatar_path').eq('id',authenticated.id).maybeSingle();
+  if(teamError||!team){console.warn('Не найдена анкета команды',teamError);user=null;account.textContent='Войти';toast('Профиль команды не найден. Убедись, что обновление Supabase выполнено.');return}
+  user={id:authenticated.id,account_type:'team',name:team.name,city:team.city,team_gender:team.gender,
+   female_team_kind:team.female_team_kind,age_group:team.age_group,formats:team.formats,
+   bio:team.bio||'',avatar_path:team.avatar_path};
+ }else{
+  user={id:authenticated.id,account_type:'player',name:meta.nickname||'Игрок',age:meta.age,
+   gender:meta.gender,skill:meta.skill,position:meta.position,city:meta.city,
+   formats:meta.formats||[meta.format||'any'],trips:meta.trips||false,bio:meta.bio||'',avatar_path:null};
+ }
+ save();account.textContent=String(user.name||'Профиль').slice(0,12);
+ document.dispatchEvent(new Event('pole-account-updated'));
+}
 account.onclick=()=>backend?authAccount():demoAccount();
 document.addEventListener('submit',async ev=>{
-  const id=ev.target.id;
-  if(id!=='pole-demo-profile'&&id!=='pole-auth-form'&&id!=='pole-profile-form')return;
-  ev.preventDefault();const f=ev.target,d=Object.fromEntries(new FormData(f).entries());
-  if(id==='pole-demo-profile' || id==='pole-profile-form' || (id==='pole-auth-form' && f.dataset.mode==='signup')){if(!checkProfileRequired(f))return; if(!['female','male'].includes(d.gender)){toast('Выбери пол');return}}
-  if(id==='pole-auth-form'&&f.dataset.mode==='login'&&!checkProfileRequired(f))return;
-  if(id==='pole-demo-profile'){
-    user={id:user?.id||uid(),name:d.name.trim(),age:+d.age,gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),format:d.format,trips:d.trips==='yes'};
-    save();account.textContent=user.name.slice(0,12);
-    document.querySelector('#modal').close();toast('Демо-анкета сохранена только в этом браузере');return;
+ const form=ev.target,id=form.id;
+ if(!['pole-demo-profile','pole-auth-form','pole-profile-form'].includes(id))return;
+ ev.preventDefault();
+ if(!validateProfileForm(form))return;
+ const d=readProfileForm(form);
+ if(id==='pole-demo-profile'){
+  user={id:user?.id||uid(),account_type:'player',name:d.name.trim(),age:Number(d.age),
+   gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),formats:d.formats,
+   format:d.formats[0],trips:d.trips==='yes',bio:d.bio||''};
+  save();account.textContent=user.name.slice(0,12);document.querySelector('#modal')?.close();toast('Анкета сохранена в браузере');return;
+ }
+ const button=form.querySelector('button[type="submit"]');
+ if(button){button.disabled=true;button.textContent='Сохраняем…'}
+ const message=form.querySelector('.form-validation-message');
+ try{
+  if(id==='pole-auth-form'){
+   if(form.dataset.mode==='signup'){
+    const isTeam=d.account_type==='team';
+    const extra=isTeam?{
+     account_type:'team',team_name:d.team_name.trim(),city:d.city.trim(),
+     team_gender:d.team_gender,female_team_kind:d.team_gender==='female'?d.female_team_kind:null,
+     age_group:d.age_group,formats:d.formats,bio:d.bio?.trim()||''
+    }:{
+     account_type:'player',nickname:d.name.trim(),age:Number(d.age),gender:d.gender,skill:d.skill,
+     position:d.position,city:d.city.trim(),format:d.formats[0],formats:d.formats,
+     trips:d.trips==='yes',bio:d.bio?.trim()||''
+    };
+    const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{
+     emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/',data:extra
+    }});
+    if(error)throw error;
+    if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. Если письма нет, нажми «Отправить письмо подтверждения повторно».';return}
+   }else{
+    const {error}=await sb.auth.signInWithPassword({email:d.email,password:d.password});if(error)throw error;
+   }
+   await syncAccount();document.querySelector('#modal')?.close();toast('Добро пожаловать в ПОЛЕ!');
+   return;
   }
-  if(id==='pole-profile-form'){
-    const message=document.querySelector('#pole-profile-message');
-    const button=f.querySelector('button[type="submit"]');
-    button.disabled=true;button.textContent='Сохраняем…';
-    try{
-      const {data:current,error:authErr}=await sb.auth.getUser();
-      if(authErr||!current?.user)throw new Error('Необходимо войти в аккаунт повторно.');
-      const payload={
-        id:current.user.id,
-        nickname:d.name.trim(),
-        age_years_at_registration:Number(d.age),
-        gender:d.gender,
-        skill:d.skill,
-        position:d.position,
-        city:d.city.trim(),
-        format:d.format,
-        trips:d.trips==='yes',
-        updated_at:new Date().toISOString()
-      };
-      const {data:updated,error}=await sb.from('profiles')
-        .upsert(payload,{onConflict:'id'})
-        .select('id,nickname,age_years_at_registration,gender,skill,position,city,format,trips')
-        .single();
-      if(error)throw error;
-      user={
-        id:updated.id,name:updated.nickname,age:updated.age_years_at_registration,
-        gender:updated.gender,skill:updated.skill,position:updated.position,
-        city:updated.city,format:updated.format,trips:updated.trips
-      };
-      save();account.textContent=user.name.slice(0,12);
-      showAccountProfile();
-      toast('Анкета успешно обновлена');
-      document.dispatchEvent(new Event('pole-profile-updated'));
-    }catch(err){
-      if(message)message.textContent='Не удалось сохранить анкету: '+(err.message||'попробуй ещё раз');
-    }finally{
-      button.disabled=false;button.textContent='Сохранить изменения';
-    }
-    return;
+  // Изменение своего профиля. Фото — отдельная добровольная загрузка.
+  const {data:{user:me},error:authError}=await sb.auth.getUser();
+  if(authError||!me)throw new Error('Требуется войти в аккаунт.');
+  const oldPhoto=user?.avatar_path||null;
+  const avatar=await uploadOptionalPhoto(form,me.id,oldPhoto);
+  const team=user?.account_type==='team';
+  let payload;
+  if(team){
+   payload={id:me.id,name:d.team_name.trim(),city:d.city.trim(),gender:d.team_gender,
+    female_team_kind:d.team_gender==='female'?d.female_team_kind:null,age_group:d.age_group,
+    formats:d.formats,bio:d.bio?.trim()||'',avatar_path:avatar,updated_at:new Date().toISOString()};
+  }else{
+   payload={id:me.id,nickname:d.name.trim(),age_years_at_registration:Number(d.age),gender:d.gender,
+    skill:d.skill,position:d.position,city:d.city.trim(),format:d.formats[0],formats:d.formats,
+    trips:d.trips==='yes',bio:d.bio?.trim()||'',avatar_path:avatar,updated_at:new Date().toISOString()};
   }
-  const message=document.querySelector('#pole-auth-message');
-  const button=f.querySelector('button[type=submit],button.primary');button.disabled=true;
-  try {
-    if(f.dataset.mode==='signup'){
-      const payload={nickname:d.name.trim(),age:+d.age,gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),format:d.format,trips:d.trips==='yes'};
-      const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/',data:payload}});
-      if(error)throw error;
-      if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. Если письма нет, нажми «Отправить письмо подтверждения повторно» ниже.';return}
-    }else{
-      const {error}=await sb.auth.signInWithPassword({email:d.email,password:d.password});
-      if(error)throw error;
-    }
-    await syncAccount();document.querySelector('#modal').close();toast('Добро пожаловать в ПОЛЕ!');
-  }catch(err){message.textContent='Ошибка: '+(err.message||'проверь данные и настройки Supabase')+(err.code?' (код: '+err.code+')':'')}
-  finally{button.disabled=false}
+  const table=team?'pole_teams':'profiles';
+  const {error}=await sb.from(table).upsert(payload,{onConflict:'id'});
+  if(error)throw error;
+  if(oldPhoto&&oldPhoto!==avatar){const {error:removeError}=await sb.storage.from('pole-avatars').remove([oldPhoto]);if(removeError)console.warn('Не удалось удалить старое фото',removeError)}
+  await syncAccount();showAccountProfile();toast('Изменения сохранены');
+  document.dispatchEvent(new Event('pole-profile-updated'));
+ }catch(error){
+  if(message)message.textContent='Не удалось сохранить: '+(error.message||'попробуй позже');
+ }finally{
+  if(button){button.disabled=false;button.textContent=id==='pole-auth-form'?(form.dataset.mode==='signup'?'Зарегистрироваться':'Войти'):'Сохранить изменения'}
+ }
 });
-async function syncAccount(){
-  if(!sb)return;
-  const {data:{user:authUser},error}=await sb.auth.getUser();
-  if(error||!authUser){user=null;save();account.textContent='Войти';return}
-  const meta=authUser.user_metadata||{};
-  const {data:profile}=await sb.from('profiles').select('nickname,age_years_at_registration,gender,skill,position,city,format,trips').eq('id',authUser.id).maybeSingle();
-  user={id:authUser.id,name:profile?.nickname||meta.nickname||'Игрок',age:profile?.age_years_at_registration||meta.age,gender:profile?.gender||meta.gender,skill:profile?.skill||meta.skill,position:profile?.position||meta.position,city:profile?.city||meta.city,format:profile?.format||meta.format,trips:profile?.trips??meta.trips};
-  save();account.textContent=user.name.slice(0,12);
+if(sb){
+ user=null;save();syncAccount();
+ sb.auth.onAuthStateChange(()=>setTimeout(syncAccount,0));
 }
-if(sb){user=null;save();syncAccount();sb.auth.onAuthStateChange(()=>setTimeout(syncAccount,0));}
-if(typeof map!=='undefined' && map){renderFields();loadOSM();}
+if(typeof map!=='undefined'&&map){renderFields();loadOSM();}
 })();
