@@ -309,9 +309,25 @@ function authAccount(mode='login'){
     '<div class="auth-tabs"><button class="secondary" id="switch-login">Войти</button> <button class="secondary" id="switch-signup">Зарегистрироваться</button></div>'+
     '<form id="pole-auth-form" data-mode="'+mode+'">'+(mode==='signup'?formBits({},true):
       '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label><label>Пароль<input name="password" type="password" autocomplete="current-password" required></label>')+
-    '<button class="primary" style="margin-top:18px">'+(mode==='signup'?'Зарегистрироваться':'Войти')+'</button><p class="notice" id="pole-auth-message"></p></form>');
+    '<button class="primary" style="margin-top:18px">'+(mode==='signup'?'Зарегистрироваться':'Войти')+'</button><p class="notice" id="pole-auth-message"></p></form>'+
+    '<p><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
   document.querySelector('#switch-login').onclick=()=>authAccount('login');
   document.querySelector('#switch-signup').onclick=()=>authAccount('signup');
+  document.querySelector('#pole-resend-confirmation').onclick=async e=>{
+    const button=e.currentTarget;
+    const email=document.querySelector('#pole-auth-form input[name="email"]')?.value.trim();
+    const note=document.querySelector('#pole-auth-message');
+    if(!email){note.textContent='Сначала введи электронную почту в форме выше.';return}
+    button.disabled=true;
+    note.textContent='Запрашиваем новое письмо…';
+    try{
+      const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/'}});
+      if(error)throw error;
+      note.textContent='Запрос принят. Проверь входящие и спам. Если письмо не появится, проверь ограничения почты в Supabase.';
+    }catch(err){
+      note.textContent='Ошибка отправки: '+(err.message||'не удалось отправить письмо')+(err.code?' (код: '+err.code+')':'');
+    }finally{button.disabled=false}
+  };
 }
 const account=document.querySelector('#account');
 account.onclick=()=>backend?authAccount():demoAccount();
@@ -332,13 +348,13 @@ document.addEventListener('submit',async ev=>{
       const payload={nickname:d.name.trim(),age:+d.age,gender:d.gender,skill:d.skill,position:d.position,city:d.city.trim(),format:d.format,trips:d.trips==='on'};
       const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/',data:payload}});
       if(error)throw error;
-      if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. После этого войди в аккаунт.';return}
+      if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. Если письма нет, нажми «Отправить письмо подтверждения повторно» ниже.';return}
     }else{
       const {error}=await sb.auth.signInWithPassword({email:d.email,password:d.password});
       if(error)throw error;
     }
     await syncAccount();document.querySelector('#modal').close();toast('Добро пожаловать в ПОЛЕ!');
-  }catch(err){message.textContent='Ошибка: '+(err.message||'проверь данные и настройки Supabase')}
+  }catch(err){message.textContent='Ошибка: '+(err.message||'проверь данные и настройки Supabase')+(err.code?' (код: '+err.code+')':'')}
   finally{button.disabled=false}
 });
 async function syncAccount(){
