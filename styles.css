@@ -346,3 +346,125 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 #community-post-form .female-team-fields[hidden]{display:none!important}
 #community-post-form .tournament-fields{margin-top:14px}
 #community-post-form .post-contact-fields{margin-top:18px}
+
+/* Реальный интерфейс ПОЛЯ: аккаунты игроков и команд, фото и форматы. */
+.pole-avatar{
+  display:inline-grid;place-items:center;flex:none;overflow:hidden;
+  width:62px;height:62px;border-radius:18px;background:#c9f269;
+  color:#183522;font-size:26px;font-weight:850;
+  box-shadow:0 3px 8px #0f271c12
+}
+.pole-avatar img,.community-avatar img,.game-player-avatar img{width:100%;height:100%;object-fit:cover}
+.pole-avatar.sm{width:42px;height:42px;font-size:17px;border-radius:13px}
+.account-identity.premium{
+  display:flex;gap:16px;align-items:center;background:linear-gradient(135deg,#153623,#2d5138);
+  color:white;border-radius:18px;padding:19px;
+}
+.account-identity.premium .account-identity-text strong{font-size:21px}
+.account-identity.premium .account-identity-text>span{font-size:13px;color:#d5e5d6}
+.account-photo-row{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:13px;margin:15px 0 6px;flex-wrap:wrap
+}
+.account-photo-row .notice{margin:0;flex:1;min-width:135px;line-height:1.5}
+.account-photo-row button{min-height:42px;white-space:nowrap}
+.account-about{background:#f7faf4;border:1px solid #e0e8dc;border-radius:13px;padding:14px 16px;margin-top:17px}
+.account-about strong{font-size:14px}
+.account-about p{font-size:13px;margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.optional-label{font-size:11px;font-weight:450;color:#718377;white-space:nowrap}
+.account-type-picker{margin:18px 0 17px}
+.account-type-picker>span{font-size:13px;font-weight:800;display:block;margin-bottom:9px}
+.account-type-picker>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px;gap:5px;border-radius:12px;background:#eff4ea}
+.account-type-picker button{border:0;border-radius:9px;padding:12px 7px;font-size:14px;font-weight:800;background:transparent;color:#536454}
+.account-type-picker button.active{background:#193d29;color:white;box-shadow:0 3px 8px #1735211a}
+#pole-auth-form [data-signup-section]{margin-top:12px}
+#pole-auth-form [data-signup-section][hidden],.team-female-kind[hidden]{display:none!important}
+.team-female-kind{border:1px solid #dce8d3;background:#f7faf4;border-radius:11px;padding:2px 13px 14px;margin-top:14px}
+.profile-formats{margin:17px 0 12px;padding:13px 13px 15px;border:1px solid #dce7d6;border-radius:13px;background:#fafdf8;min-width:0}
+.profile-formats legend{color:#22442d;font-size:14px;font-weight:850;padding:0 5px}
+.profile-formats .notice{font-size:12px;margin:3px 0 12px}
+.format-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.format-option{
+  margin:0!important;min-width:0;position:relative;display:flex!important;
+  flex-direction:row!important;align-items:center;justify-content:center;
+  gap:8px;cursor:pointer;padding:11px 6px;background:white;border:1px solid #d9e5d7;
+  border-radius:11px;text-align:center;min-height:46px;transition:border-color .15s,background .15s
+}
+.format-option input{
+  appearance:none;position:absolute;inset:0;width:100%!important;height:100%!important;
+  margin:0!important;opacity:0;cursor:pointer
+}
+.format-option span{font-size:14px;font-weight:800;color:#1c3b28;pointer-events:none}
+.format-option.selected{background:#d7f98a;border-color:#9dce4c}
+.format-option.selected span:before{content:"✓";font-size:12px;font-weight:900;margin-right:5px}
+.format-option:focus-within{outline:2px solid #275638;outline-offset:2px}
+#pole-profile-form input[type=file]{font-size:13px;width:100%;padding:12px;border:1px dashed #b9d4ae;background:#fff;border-radius:11px}
+#pole-profile-form input[type=file]::file-selector-button{border:0;background:#dff5c1;color:#1b3926;padding:9px;border-radius:8px;font-weight:700;margin-right:9px;cursor:pointer}
+#pole-profile-form .account-edit-section{margin:0 0 14px}
+#pole-profile-form .account-edit-section>label{margin-top:14px}
+#pole-profile-form .account-edit-section>label:first-of-type{margin-top:8px}
+#pole-profile-form .account-edit-section textarea{width:100%;min-height:85px}
+#pole-profile-form .checkline{display:flex;flex-direction:row;gap:8px;align-items:center;margin-top:13px}
+#pole-profile-form .checkline input{width:18px;height:18px;flex:none;margin:0}
+#pole-profile-form .account-edit-section h3{margin-top:0}
+#pole-profile-form .account-edit-actions{margin-top:19px}
+
+/* Каталог объявлений — реальные карточки, как в презентационном макете. */
+.community-feed-head{
+ display:flex;align-items:center;justify-content:space-between;gap:15px;
+ margin:24px 0 16px
+}
+.community-feed-head h2{font-size:23px;letter-spacing:-.5px;margin:0}
+.community-feed-head p{margin:6px 0 0}
+.community-post-counter{background:#eaf2e5;color:#33563a;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:750;white-space:nowrap}
+.community-switch{display:flex;flex-wrap:wrap;gap:7px;padding:5px;background:#eff4ed;border-radius:14px;margin:12px 0 21px}
+.community-switch button{flex:1;min-width:90px;border:0;border-radius:10px;background:transparent;color:#35503b;padding:11px 12px;font-size:13px;font-weight:750;min-height:42px}
+.community-switch button.active{background:#18412b;color:white;box-shadow:0 2px 7px #15331e22}
+.community-feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.community-post-card{
+  background:#fff;border:1px solid #e1e9de;border-radius:18px;
+  box-shadow:0 6px 22px #1b402710;padding:21px;min-width:0
+}
+.community-post-head{display:flex;align-items:center;gap:11px}
+.community-avatar{
+  width:53px;height:53px;display:grid;place-items:center;flex:none;border-radius:16px;
+  overflow:hidden;background:#dff3c2;color:#24482d;font-size:20px;font-weight:850
+}
+.community-post-author{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.community-post-author strong{font-size:15px;color:#183923;overflow-wrap:anywhere}
+.community-post-author>span{font-size:11px;color:#708275;overflow-wrap:anywhere}
+.community-post-label{background:#d7f584;color:#254225;border-radius:99px;font-size:11px;font-weight:850;padding:6px 9px;max-width:105px;text-align:center}
+.community-post-card h3{font-size:18px;line-height:1.3;margin:16px 0 13px;color:#1a3424}
+.community-chips{display:flex;flex-wrap:wrap;gap:7px}
+.community-chip{border-radius:8px;background:#eef4eb;color:#355341;font-size:12px;padding:7px 9px;line-height:1.35}
+.community-post-summary{font-size:13px;line-height:1.65;color:#516657;margin:14px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.community-competition{font-size:12px;padding:9px 11px;border-radius:8px;background:#f6f9ec;margin:12px 0 0;color:#455d3e}
+.community-post-extra{border-top:1px solid #e7ebe3;margin:14px 0 13px;padding-top:12px}
+.community-post-extra summary{cursor:pointer;font-size:12px;font-weight:800;color:#305b38}
+.community-post-extra .post-details{display:grid;grid-template-columns:1fr;gap:8px;padding:11px 0 0;font-size:12px;color:#37503e}
+.community-contact-button{
+  display:block;text-align:center;text-decoration:none;border-radius:11px;
+  color:white;background:#164a2c;font-weight:800;font-size:14px;
+  padding:13px 14px;min-height:44px;margin-top:14px
+}
+.community-contact-button:hover{background:#22633c}
+.game-player-line{display:flex;align-items:flex-start;gap:10px}
+.game-player-line>div{min-width:0;flex:1}
+.game-player-avatar{display:grid;place-items:center;flex:none;width:38px;height:38px;overflow:hidden;border-radius:50%;font-size:15px;font-weight:800;background:#cdeb9d;color:#214329}
+@media(max-width:850px){.community-feed{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){
+ .community-feed-head{align-items:flex-start;gap:6px}
+ .community-feed-head h2{font-size:20px}
+ .community-post-counter{font-size:11px}
+ .community-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .community-switch button{min-width:0}
+ .community-post-card{padding:16px;border-radius:15px}
+ .community-post-head{gap:9px}
+ .community-avatar{width:45px;height:45px;border-radius:13px}
+ .community-post-label{font-size:10px;padding:5px 7px;max-width:90px}
+ .format-choices{gap:7px}
+ .format-option{padding:9px 3px;min-height:43px}
+ .format-option span{font-size:13px}
+ .account-identity.premium{padding:16px}
+ .account-photo-row button{width:100%}
+}
