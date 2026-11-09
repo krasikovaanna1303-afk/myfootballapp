@@ -74,7 +74,7 @@ async function refreshPosts(){
  try{
    const {data,error}=await sb.from('pole_posts').select('*').order('created_at',{ascending:false}).limit(200);
    if(error)throw error;
-   window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,author:p.author,created:p.created_at}));
+   window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,details:p.details||{},contact_platform:p.contact_platform||'',contact_handle:p.contact_handle||'',author:p.author,created:p.created_at}));
    document.dispatchEvent(new Event('pole-shared-posts'));
    clearError('объявления');
  }catch(e){errorNotice(e,'объявления')}
@@ -119,8 +119,14 @@ async function switchJoin(id){
 }
 async function savePost(form){
  const u=await auth();if(!u)return;
- const d=Object.fromEntries(new FormData(form).entries());
- const {error}=await sb.from('pole_posts').insert({creator_id:u.id,type:d.type,title:d.title.trim(),city:d.city.trim(),event_date:d.date||null,description:d.description.trim(),author:user?.name||u.user_metadata?.nickname||'Игрок'});
+ const payload=window.POLE_POST_PAYLOAD?.(form);
+ if(!payload)return;
+ const {error}=await sb.from('pole_posts').insert({
+  creator_id:u.id,type:payload.type,title:payload.title,city:payload.city,
+  event_date:payload.date||null,description:payload.description,details:payload.details||{},
+  contact_platform:payload.contact_platform,contact_handle:payload.contact_handle,
+  author:user?.name||u.user_metadata?.nickname||'Игрок'
+ });
  if(error)throw error;
  document.querySelector('#modal')?.close();toast('Объявление опубликовано для всех пользователей');await refreshPosts();
 }
