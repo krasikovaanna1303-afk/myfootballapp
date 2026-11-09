@@ -39,7 +39,7 @@ window.POLE_GAME_ROSTER_HTML=g=>{
   const inner=!Array.isArray(players)?'<p class="notice">Состав загружается…</p>':
     players.length?'<div class="game-roster-list">'+players.map(p=>{
       const chips=[
-        p.age_at_registration!=null?'Возраст при регистрации: '+E(p.age_at_registration):'',
+        p.age_at_registration!=null?'Возраст: '+E(p.age_at_registration):'',
         p.gender==='female'?'Женский':p.gender==='male'?'Мужской':'',
         p.skill?'Уровень: '+E(skillNames[p.skill]||p.skill):'',
         p.player_position?'Позиция: '+E(positionNames[p.player_position]||p.player_position):'',
