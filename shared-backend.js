@@ -9,7 +9,27 @@ if(!sb){
   return;
 }
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const errorNotice=e=>toast('Ошибка общей базы: '+(e?.message||'попробуй позже'));
+// Keep connection problems visible instead of showing a disappearing toast every 30 seconds.
+const backendErrors=new Map();
+const backendStatus=document.createElement('div');
+backendStatus.id='pole-backend-status';
+backendStatus.setAttribute('role','alert');
+backendStatus.hidden=true;
+backendStatus.style.cssText='margin:12px auto;padding:12px 16px;max-width:960px;border:1px solid #d99b52;border-radius:12px;background:#fff4e6;color:#49301a;font-size:14px;line-height:1.5';
+document.querySelector('header')?.after(backendStatus);
+const updateBackendStatus=()=>{
+  backendStatus.hidden=!backendErrors.size;
+  if(!backendErrors.size)return;
+  const lines=[...backendErrors].map(([where,err])=>where+': '+err).join(' | ');
+  backendStatus.textContent='Не удалось загрузить данные общей базы. '+lines+'. Проверь подключение Supabase. Пришли этот текст, если нужна помощь.';
+};
+const errorNotice=(e,where='общая база')=>{
+  const detail=[e?.message||'нет ответа от сервера',e?.code?'код '+e.code:''].filter(Boolean).join(' · ');
+  backendErrors.set(where,detail);
+  updateBackendStatus();
+  console.warn('ПОЛЕ: ошибка Supabase ('+where+')',e);
+};
+const clearError=where=>{if(backendErrors.delete(where))updateBackendStatus()};
 const auth=async()=>{const {data,error}=await sb.auth.getUser();if(error||!data?.user){toast('Войди в аккаунт для этого действия');document.querySelector('#account')?.click();return null}return data.user};
 let currentUid=null,loading=false,lastFeedback=[];
 const toGame=(g,people)=>({id:g.id,fieldId:g.field_id,field:g.field_name,title:g.title,date:g.game_date,time:g.game_time?.slice(0,5)||'',capacity:g.capacity,description:g.description,creator:g.creator_id,organizer:g.organizer,attendees:people.filter(p=>p.game_id===g.id).map(p=>p.user_id)});
@@ -27,7 +47,8 @@ async function refreshGames(){
    games=(rows||[]).map(x=>toGame(x,people));
    renderGames();
    document.dispatchEvent(new Event('pole-shared-games'));
- }catch(e){errorNotice(e)}
+   clearError('игры');
+ }catch(e){errorNotice(e,'игры')}
  finally{loading=false}
 }
 async function refreshPosts(){
@@ -36,14 +57,16 @@ async function refreshPosts(){
    if(error)throw error;
    window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,author:p.author,created:p.created_at}));
    document.dispatchEvent(new Event('pole-shared-posts'));
- }catch(e){errorNotice(e)}
+   clearError('объявления');
+ }catch(e){errorNotice(e,'объявления')}
 }
 async function refreshFeedback(){
  try{
    const {data,error}=await sb.from('pole_field_feedback').select('id,field_id,kind,surface,lighting,access,rating,message,author,status,created_at').eq('status','approved').order('created_at',{ascending:false}).limit(2500);
    if(error)throw error;
    lastFeedback=data||[];
- }catch(e){errorNotice(e)}
+   clearError('отзывы');
+ }catch(e){errorNotice(e,'отзывы')}
 }
 function appendFeedback(fieldId){
  const box=document.querySelector('#modal-inner');if(!box)return;
