@@ -299,28 +299,73 @@ function demoAccount(){
   modal('Анкета игрока · демо','<p class="notice">Сейчас эта анкета сохраняется только в твоём браузере, без паролей и общего аккаунта.</p><form id="pole-demo-profile" novalidate>'+formBits(user||{},false)+'<p class="form-validation-message" id="pole-demo-message" role="alert"></p><button class="primary" style="margin-top:18px">Сохранить анкету</button></form>');
   hydrateProfile(document.querySelector('#pole-demo-profile'),user||{});
 }
+const profileSkillNames={new:'Новичок',amateur:'Любитель',confident:'Уверенно играю',advanced:'Продвинутый'};
+const profilePositionNames={any:'Любая позиция',gk:'Вратарь',def:'Защитник',mid:'Полузащитник',fwd:'Нападающий'};
+const profileFormatNames={any:'Любой', '5v5':'5 на 5','7v7':'7 на 7','11v11':'11 на 11'};
+function showAccountProfile(){
+ if(!user)return;
+ const item=(label,value)=>'<div class="account-detail"><span class="account-detail-label">'+E(label)+'</span><span class="account-detail-value">'+E(value===undefined||value===null||value===''?'Не указано':value)+'</span></div>';
+ const firstLetter=Array.from(String(user.name||'И').trim())[0]?.toLocaleUpperCase('ru-RU')||'И';
+ modal('Личный кабинет',
+  '<div class="account-identity"><div class="account-avatar" aria-hidden="true">'+E(firstLetter)+'</div><div class="account-identity-text"><div class="account-identity-caption">Моя анкета игрока</div><strong>'+E(user.name||'Игрок')+'</strong><span>'+E(user.city||'Город не указан')+'</span></div></div>'+
+  '<div class="account-section-title">Личные данные</div>'+
+  '<div class="account-detail-grid">'+
+  item('Возраст',user.age?user.age+' лет':null)+
+  item('Пол',user.gender==='female'?'Женский':user.gender==='male'?'Мужской':null)+
+  item('Город',user.city)+
+  '</div>'+
+  '<div class="account-section-title">Футбольная анкета</div>'+
+  '<div class="account-detail-grid">'+
+  item('Уровень игры',profileSkillNames[user.skill]||user.skill)+
+  item('Позиция',profilePositionNames[user.position]||user.position)+
+  item('Формат',profileFormatNames[user.format]||user.format)+
+  item('Футбольные поездки',user.trips==null?null:user.trips?'Интересны':'Не интересны')+
+  '</div>'+
+  '<p class="account-privacy-note">Когда ты записываешься на игру, другие участники могут видеть данные твоей игровой анкеты. Электронная почта не публикуется.</p>'+
+  '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Изменить анкету</button><button type="button" class="secondary" id="pole-logout">Выйти из аккаунта</button></div>');
+ document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
+ document.querySelector('#pole-logout').onclick=async()=>{
+  await sb.auth.signOut();user=null;save();
+  document.querySelector('#account').textContent='Войти';
+  document.querySelector('#modal').close();toast('Вы вышли из аккаунта');
+ };
+}
 function editAccountProfile(){
  if(!sb||!user)return;
  modal('Редактировать анкету',
-  '<p class="notice">Изменения сохраняются в твоём профиле и будут видны другим вошедшим пользователям, когда ты участвуешь в игре. Электронная почта не публикуется.</p>'+
+  '<p class="account-edit-intro">Обнови свои данные. Изменения сохранятся в «ПОЛЕ» и будут применяться к новым объявлениям и отображению в составах игр.</p>'+
   '<form id="pole-profile-form" novalidate>'+formBits(user,false)+
   '<p class="form-validation-message" role="alert" id="pole-profile-message"></p>'+
-  '<button class="primary" type="submit" style="margin-top:18px">Сохранить изменения</button></form>');
- hydrateProfile(document.querySelector('#pole-profile-form'),user);
+  '<div class="account-edit-actions"><button class="primary" type="submit">Сохранить изменения</button><button class="secondary" type="button" id="pole-cancel-profile">Назад в кабинет</button></div></form>');
+ const form=document.querySelector('#pole-profile-form');
+ hydrateProfile(form,user);
+ // Две тематические группы с привычным расположением полей.
+ const labels=[...form.querySelectorAll(':scope > label')];
+ const wrapper=document.createElement('div');
+ wrapper.className='account-edit-sections';
+ const groups=[
+  {title:'О тебе',keys:['name','age','gender','city']},
+  {title:'Футбольные предпочтения',keys:['skill','position','format','trips']}
+ ];
+ for(const group of groups){
+  const section=document.createElement('section');
+  section.className='account-edit-section';
+  const heading=document.createElement('h3');heading.textContent=group.title;section.appendChild(heading);
+  const grid=document.createElement('div');grid.className='account-edit-grid';
+  for(const key of group.keys){
+   const label=labels.find(l=>l.querySelector('[name="'+key+'"]'));
+   if(!label)continue;
+   if(['name','city','trips'].includes(key))label.classList.add('wide-field');
+   grid.appendChild(label);
+  }
+  section.appendChild(grid);wrapper.appendChild(section);
+ }
+ form.prepend(wrapper);
+ document.querySelector('#pole-cancel-profile').onclick=showAccountProfile;
 }
 function authAccount(mode='login'){
   if(!sb)return demoAccount();
-  if(user){
-    const age=user.age?' · '+E(user.age)+' лет':'';
-    const city=user.city?' · '+E(user.city):'';
-    modal('Личный кабинет',
-      '<div class="account-profile-summary"><b>'+E(user.name)+'</b><p>'+E(user.gender==='female'?'Женский':user.gender==='male'?'Мужской':'Профиль игрока')+age+city+'</p></div>'+
-      '<p class="notice">Твоя анкета хранится в профиле «ПОЛЯ». Её можно изменить в любое время.</p>'+
-      '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">Редактировать анкету</button><button type="button" class="secondary" id="pole-logout">Выйти из аккаунта</button></div>');
-    document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
-    document.querySelector('#pole-logout').onclick=async()=>{await sb.auth.signOut();user=null;save();document.querySelector('#account').textContent='Войти';document.querySelector('#modal').close();toast('Вы вышли из аккаунта')};
-    return;
-  }
+  if(user){showAccountProfile();return}
   modal(mode==='signup'?'Регистрация в ПОЛЕ':'Вход в ПОЛЕ',
     '<div class="auth-tabs"><button class="secondary" id="switch-login">Войти</button> <button class="secondary" id="switch-signup">Зарегистрироваться</button></div>'+
     '<form id="pole-auth-form" data-mode="'+mode+'" novalidate>'+(mode==='signup'?formBits({},true):
@@ -403,7 +448,7 @@ document.addEventListener('submit',async ev=>{
         city:updated.city,format:updated.format,trips:updated.trips
       };
       save();account.textContent=user.name.slice(0,12);
-      document.querySelector('#modal')?.close();
+      showAccountProfile();
       toast('Анкета успешно обновлена');
       document.dispatchEvent(new Event('pole-profile-updated'));
     }catch(err){
