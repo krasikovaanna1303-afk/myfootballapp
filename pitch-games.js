@@ -21,7 +21,7 @@ const prior=window.showField;
 window.showField=function(id){
  prior(id);
  const f=pitch(id),box=document.querySelector('#modal-inner');if(!f||!box)return;
- box.insertAdjacentHTML('beforeend','<section class="pitch-games"><h3>⚽ Игры на этой площадке</h3><p class="notice">Пока демонстрационный режим: игры и записи сохраняются только в текущем браузере, а не на устройствах остальных игроков.</p><div id="pitch-games-list" data-pitch="'+esc(id)+'"></div><button class="primary" id="pitch-create-game">+ Создать игру здесь</button></section>');
+ box.insertAdjacentHTML('beforeend','<section class="pitch-games"><h3>⚽ Игры на этой площадке</h3><p class="notice">'+(window.POLE_SUPABASE_CLIENT?'Игры видны всем пользователям. Для записи требуется вход в аккаунт.':'Демо: игры сохраняются только в текущем браузере, пока не подключена общая база.')+'</p><div id="pitch-games-list" data-pitch="'+esc(id)+'"></div><button class="primary" id="pitch-create-game">+ Создать игру здесь</button></section>');
  renderPitchGames(id);
  const create=()=>{
    document.querySelector('#modal').close();
@@ -36,6 +36,7 @@ window.showField=function(id){
  const older=document.querySelector('#field-game');if(older){older.textContent='★ Оставить отзыв';older.classList.remove('primary');older.classList.add('secondary');older.onclick=()=>{const review=document.querySelector('[data-community-review]');if(review)review.click();else toast('Отзывы временно недоступны');};}
  const duplicate=document.querySelector('#field-review');if(duplicate)duplicate.remove();
 };
+document.addEventListener('pole-shared-games',()=>{const id=document.querySelector('#pitch-games-list')?.dataset.pitch;if(id)renderPitchGames(id)});
 document.addEventListener('click',e=>{
  const join=e.target.closest('[data-join][data-kind="game"]');
  if(join){const id=document.querySelector('#pitch-games-list')?.dataset.pitch;if(id)setTimeout(()=>renderPitchGames(id),0)}
