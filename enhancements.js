@@ -565,6 +565,9 @@ document.addEventListener('submit',async ev=>{
   const table=team?'pole_teams':'profiles';
   const {error}=await sb.from(table).upsert(payload,{onConflict:'id'});
   if(error)throw error;
+  // Обновляем фото и имя также в ранее опубликованных объявлениях автора.
+  const {error:postSyncError}=await sb.rpc('pole_sync_own_post_profile');
+  if(postSyncError)console.warn('Не удалось синхронизировать старые объявления',postSyncError);
   if(oldPhoto&&oldPhoto!==avatar){const {error:removeError}=await sb.storage.from('pole-avatars').remove([oldPhoto]);if(removeError)console.warn('Не удалось удалить старое фото',removeError)}
   await syncAccount();showAccountProfile();toast('Изменения сохранены');
   document.dispatchEvent(new Event('pole-profile-updated'));
