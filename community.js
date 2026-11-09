@@ -170,8 +170,9 @@ function contactFields(){
 
 function newPost(type){
  if(!profile())return;
+ if(type==='player'&&user?.account_type==='team'){toast('Искать команду можно из аккаунта игрока');return}
  const demo=window.POLE_SUPABASE_CLIENT?'После публикации объявление увидят другие пользователи.':'Пока это локальный черновик объявления.';
- const common='<label>Дополнительная информация<textarea name="description" maxlength="2000" minlength="10" required placeholder="Уточни пожелания, особенности или условия"></textarea></label>';
+ const common='<label>Дополнительная информация<textarea name="description" maxlength="2000" minlength="10" required placeholder="Уточни пожелания, особенности или условия">'+escapeHTML(type==='player'&&user?.bio?user.bio:'')+'</textarea></label>';
  const userNick=escapeHTML(user?.name||'Игрок');
  let extra='';
  if(type==='player'){
@@ -179,19 +180,19 @@ function newPost(type){
   '<p class="community-post-nickname"><b>Игрок:</b> '+userNick+'</p>'+
   input('Возраст','age',user?.age||'','required type="number" min="16" max="100"')+
   selection('Пол','gender',genders,user?.gender)+selection('Уровень игры','skill',skills,user?.skill)+
-  selection('Основная позиция','position',positions,user?.position)+selection('Предпочитаемый формат','format',formats,user?.format)+
+  selection('Основная позиция','position',positions,user?.position)+formatMulti(user||{})+
   '</section><section class="community-form-section"><h3>Какую команду ищу</h3>'+
   selection('Для чего ищешь команду?','goal',playerGoals)+'</section>';
  }else if(type==='team'){
   extra='<section class="community-form-section"><h3>О команде</h3>'+
-   input('Название команды','team_name','','required maxlength="100" placeholder="Название команды"')+
-   selection('Тип команды','team_gender',targetGenders)+
+   input('Название команды','team_name',user?.account_type==='team'?user.name:'','required maxlength="100" placeholder="Название команды"')+
+   selection('Тип команды','team_gender',targetGenders,user?.account_type==='team'?user.team_gender:'')+
    '<div class="female-team-fields" id="post-female-team-fields" hidden>'+
-   selection('Какая это женская команда?','female_team_kind',teamKinds)+'</div>'+
-   selection('Формат игры','format',formats)+
+   selection('Какая это женская команда?','female_team_kind',teamKinds,user?.account_type==='team'?user.female_team_kind:'')+'</div>'+
+   formatMulti(user?.account_type==='team'?user:{})+
    '</section><section class="community-form-section"><h3>Кого ищем</h3>'+
    selection('На какую позицию нужен игрок','needed_position',[positions[0],positions[5],...positions.slice(1,5)])+
-   selection('Возрастная категория','age_group',ageGroups)+
+   selection('Возрастная категория','age_group',ageGroups,user?.account_type==='team'?user.age_group:'')+
    selection('Желаемый уровень игры','required_skill',skills)+
    input('Сколько игроков нужно','spots','1','required type="number" min="1" max="50"')+
    '</section><section class="community-form-section"><h3>Для чего ищем игрока</h3>'+
@@ -205,7 +206,7 @@ function newPost(type){
   extra='<section class="community-form-section"><h3>О турнире</h3>'+
    input('Название турнира','tournament_name','','required maxlength="120"')+
    input('Дата турнира','date','','required type="date"')+
-   selection('Формат игры','format',formats)+
+   formatMulti({})+
    selection('Какие команды участвуют','team_gender',targetGenders)+
    input('Взнос за участие, ₽ за команду (0 — бесплатно)','tournament_fee','0','required type="number" min="0" max="1000000"')+
    input('Место проведения','venue','','required maxlength="150"')+
@@ -220,6 +221,12 @@ function newPost(type){
  const form=document.querySelector('#community-post-form');
  syncConditionalFields(form);
  syncContactHelp(form);
+ form.querySelectorAll('input[name="formats"]').forEach(box=>box.addEventListener('change',()=>{
+  if(box.checked&&box.value==='any')form.querySelectorAll('input[name="formats"]').forEach(b=>{if(b!==box)b.checked=false});
+  else if(box.checked){const any=form.querySelector('input[name="formats"][value="any"]');if(any)any.checked=false}
+  form.querySelectorAll('.format-option').forEach(el=>el.classList.toggle('selected',!!el.querySelector('input')?.checked));
+ }));
+ form.querySelectorAll('.format-option').forEach(el=>el.classList.toggle('selected',!!el.querySelector('input')?.checked));
 }
 function syncConditionalFields(form){
  if(!form)return;
