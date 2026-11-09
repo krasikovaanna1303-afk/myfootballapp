@@ -30,6 +30,7 @@ create table if not exists public.pole_teams (
        and cardinality(formats) between 1 and 5 and (not ('any'=any(formats)) or cardinality(formats)=1))
 );
 alter table public.pole_teams enable row level security;
+grant select,insert,update on public.pole_teams to authenticated;
 drop policy if exists "team own read" on public.pole_teams;
 create policy "team own read" on public.pole_teams for select to authenticated using(id=(select auth.uid()));
 drop policy if exists "team own insert" on public.pole_teams;
@@ -135,5 +136,24 @@ create policy "pole avatar owner delete" on storage.objects
  for delete to authenticated using(
  bucket_id='pole-avatars' and (storage.foldername(name))[1]=(select auth.uid())::text
 );
+-- Обновление имени и аватарки в уже опубликованных объявлениях только их автором.
+create or replace function public.pole_sync_own_post_profile()
+returns void language plpgsql security definer set search_path = '' as $
+declare v_name text; v_avatar text;
+begin
+ if auth.uid() is null then raise exception 'Authentication required'; end if;
+ select coalesce(p.nickname,t.name),coalesce(p.avatar_path,t.avatar_path)
+ into v_name,v_avatar
+ from auth.users a
+ left join public.profiles p on p.id=a.id
+ left join public.pole_teams t on t.id=a.id
+ where a.id=auth.uid();
+ if v_name is null then raise exception 'Profile not found'; end if;
+ update public.pole_posts set author=v_name,avatar_path=v_avatar
+ where creator_id=auth.uid();
+end $;
+revoke all on function public.pole_sync_own_post_profile() from public,anon;
+grant execute on function public.pole_sync_own_post_profile() to authenticated;
+
 commit;
 notify pgrst, 'reload schema';
