@@ -111,3 +111,8 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 .form-validation-message:not(:empty){color:#9b321e;font-size:13px;font-weight:650;margin:12px 0}
 .field-error{border:2px solid #ba4130!important;outline-offset:2px}
 @media(max-width:700px){.game-roster{padding:12px}.game-player{padding:12px}.game-capacity-label input{min-height:46px}}
+
+/* Отступ между согласием на локальный черновик и кнопкой заявки. */
+#partner-lead-form .checkline{margin:18px 0 0;align-items:flex-start;gap:10px;line-height:1.5}
+#partner-lead-form .checkline input{margin-top:2px}
+#partner-lead-form button[type="submit"]{display:block;margin-top:24px}
