@@ -138,7 +138,7 @@ create policy "pole avatar owner delete" on storage.objects
 );
 -- Обновление имени и аватарки в уже опубликованных объявлениях только их автором.
 create or replace function public.pole_sync_own_post_profile()
-returns void language plpgsql security definer set search_path = '' as $
+returns void language plpgsql security definer set search_path = '' as $$
 declare v_name text; v_avatar text;
 begin
  if auth.uid() is null then raise exception 'Authentication required'; end if;
@@ -151,7 +151,7 @@ begin
  if v_name is null then raise exception 'Profile not found'; end if;
  update public.pole_posts set author=v_name,avatar_path=v_avatar
  where creator_id=auth.uid();
-end $;
+end $$;
 revoke all on function public.pole_sync_own_post_profile() from public,anon;
 grant execute on function public.pole_sync_own_post_profile() to authenticated;
 
