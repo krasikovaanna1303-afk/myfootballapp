@@ -30,7 +30,7 @@ window.showField=id=>{const f=[...fields,...osm].find(x=>x.id===id);if(!f)return
 document.addEventListener('click',e=>{const focus=e.target.closest('[data-focus]'),details=e.target.closest('[data-field]'),join=e.target.closest('[data-join]');if(focus){const f=[...fields,...osm].find(x=>x.id===focus.dataset.focus);if(f)map.setView([f.lat,f.lon],16)}if(details)showField(details.dataset.field);if(join){if(!needUser())return;const list=join.dataset.kind==='game'?games:trips;let obj=list.find(x=>x.id===join.dataset.join);if(!obj)return;obj.attendees||=[];if(obj.attendees.includes(user.id))obj.attendees=obj.attendees.filter(x=>x!==user.id);else if(obj.attendees.length<obj.capacity)obj.attendees.push(user.id);else return toast('Все места заняты');save();renderGames();renderTrips();toast('Участие обновлено')}});
 const positionNames={gk:'Вратарь',def:'Защитник',mid:'Полузащитник',fwd:'Нападающий',any:'Любая позиция'};
 const skillNames={new:'Новичок',amateur:'Любитель',confident:'Уверенно играю',advanced:'Продвинутый'};
-const fmtNames={any:'Любой', '5v5':'5 на 5','7v7':'7 на 7','11v11':'11 на 11'};
+const fmtNames={any:'Любой', '5v5':'5×5','6v6':'6×6','7v7':'7×7','8v8':'8×8','11v11':'11×11'};
 window.POLE_GAME_ROSTER_HTML=g=>{
   if(!window.POLE_SUPABASE_CLIENT)return '';
   const count=g.attendees?.length||0;
@@ -44,9 +44,12 @@ window.POLE_GAME_ROSTER_HTML=g=>{
         p.skill?'Уровень: '+E(skillNames[p.skill]||p.skill):'',
         p.player_position?'Позиция: '+E(positionNames[p.player_position]||p.player_position):'',
         p.city?'Город: '+E(p.city):'',
-        p.preferred_format?'Формат: '+E(fmtNames[p.preferred_format]||p.preferred_format):''
+        p.preferred_format?'Форматы: '+E(String(p.preferred_format).split(/,\s*/).map(x=>fmtNames[x]||x).join(', ')):''
       ].filter(Boolean);
-      return '<article class="game-player"><b>'+E(p.nickname||'Игрок')+'</b>'+(p.user_id===g.creator?' <span class="tag">Организатор</span>':'')+'<p>'+chips.join(' · ')+'</p></article>';
+      const avatarUrl=window.POLE_AVATAR_URL?.(p.avatar_path)||'';
+      const initial=Array.from(String(p.nickname||'И'))[0]?.toUpperCase()||'И';
+      const photo='<span class="game-player-avatar">'+(avatarUrl?'<img src="'+E(avatarUrl)+'" alt="Фото игрока" loading="lazy">':E(initial))+'</span>';
+      return '<article class="game-player"><div class="game-player-line">'+photo+'<div><b>'+E(p.nickname||'Игрок')+'</b>'+(p.user_id===g.creator?' <span class="tag">Организатор</span>':'')+'<p>'+chips.join(' · ')+'</p></div></div></article>';
     }).join('')+'</div>':'<p class="notice">Никто пока не записался.</p>';
   return '<details class="game-roster"><summary>Кто записался ('+count+')</summary>'+inner+'</details>';
 };
