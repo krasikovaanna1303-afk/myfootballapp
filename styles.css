@@ -486,5 +486,5 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 @media(max-width:600px){.partner-date-grid{grid-template-columns:1fr}.community-own-actions{flex-direction:column}.community-own-actions button{width:100%}}
 
 /* Внешний вид логотипа не изменён; доступен переход на главную. */
-header #brand-home{cursor:pointer}
+header #brand-home,header #brand-home *{cursor:pointer!important}
 header #brand-home:focus-visible{outline:2px solid #c9f269;outline-offset:5px;border-radius:4px}
