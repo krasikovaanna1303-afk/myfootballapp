@@ -432,7 +432,7 @@ function authAccount(mode='login'){
   (signup?'<input type="hidden" name="account_type" value="player">':'')+
   '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label>'+
   '<label>Пароль'+(signup?' (минимум 8 символов)':'')+'<input type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" '+(signup?'minlength="8" ':'')+'required></label>'+
-  (signup?'<div data-signup-section="player">'+playerFormBits({})+'</div><div data-signup-section="team" hidden>'+teamFormBits({})+'</div><p class="notice">Фото игрока или логотип команды можно добавить позже в личном кабинете.</p>':'')+
+  (signup?'<div data-signup-section="player">'+playerFormBits({})+'</div><div data-signup-section="team" hidden>'+teamFormBits({})+'</div><p class="notice" id="pole-signup-photo-note">Фото профиля можно добавить позже в личном кабинете.</p>':'')+
   '<p class="form-validation-message" role="alert"></p><button class="primary" type="submit" style="margin-top:16px">'+(signup?'Зарегистрироваться':'Войти')+'</button></form>'+
   '<p id="pole-confirm-help" hidden><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
  document.querySelector('#switch-login').onclick=()=>authAccount('login');
@@ -448,6 +448,8 @@ function authAccount(mode='login'){
    });
    // Переключение типа профиля не должно включать скрытый выбор типа женской команды.
    syncTeamKind(form.querySelector('[data-signup-section="team"]'));
+   const photoNote=form.querySelector('#pole-signup-photo-note');
+   if(photoNote)photoNote.textContent=type==='team'?'Логотип команды можно добавить позже в личном кабинете.':'Фото игрока можно добавить позже в личном кабинете.';
    form.querySelectorAll('[data-signup-type]').forEach(b=>b.classList.toggle('active',b.dataset.signupType===type));
    form.querySelector('.form-validation-message').textContent='';
   };
