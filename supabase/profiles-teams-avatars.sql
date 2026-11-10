@@ -20,7 +20,7 @@ create table if not exists public.pole_teams (
  city text not null check(char_length(city) between 2 and 80),
  gender text not null check(gender in ('female','male','any')),
  female_team_kind text check(female_team_kind in ('regular','moms')),
- age_group text not null default 'any' check(age_group in ('any','18-24','25-34','35-44','45+')),
+ age_group text not null default 'any' check(age_group in ('under18','any','18-24','25-34','35-44','45+')),
  formats text[] not null default array['any']::text[],
  bio text not null default '' check(char_length(bio)<=500),
  avatar_path text,
