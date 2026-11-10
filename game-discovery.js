@@ -32,6 +32,7 @@ const oldAdd=add;
 add=function(type,coord){
  if(type!=='game')return oldAdd(type,coord);
  if(!needUser())return;
+ if(user?.account_type==='team'){toast('Создавать игры можно из аккаунта игрока');return}
  const html='<form id="gameform" class="game-create-form">'+
  '<label>Название игры<input name="title" type="text" required minlength="2" maxlength="120" value="Футбол для всех"></label>'+
  '<label>Площадка <input id="pole-game-field-search" type="search" placeholder="Введи название, адрес или город" maxlength="180" autocomplete="off" required></label>'+
@@ -175,7 +176,9 @@ card=function(x,kind){
   x.participant_group?gm[x.participant_group]||x.participant_group:'',
   x.age_group?am[x.age_group]||x.age_group:''
  ].filter(Boolean);
- const availability=limited?(full?'Мест нет':spots+' '+(spots===1?'место':spots<5?'места':'мест')):'Без лимита';
+ const last=spots%10,last2=spots%100;
+ const noun=last===1&&last2!==11?'место':last>=2&&last<=4&&(last2<12||last2>14)?'места':'мест';
+ const availability=limited?(full?'Мест нет':spots+' '+noun):'Без лимита';
  const description=String(x.description||'').trim();
  return '<article class="card pole-game-card">'+
  '<div class="pole-game-card-head"><span class="pole-game-eyebrow">⚽ ОТКРЫТАЯ ИГРА</span><span class="pole-game-space'+(full?' full':'')+'">'+esc(availability)+'</span></div>'+
