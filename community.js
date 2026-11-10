@@ -134,8 +134,10 @@ function keyChips(p){
 function render(){
  const root=document.querySelector('#community-content');if(!root)return;
  const allPosts=[...(window.POLE_SHARED_POSTS||rows())].sort((a,b)=>(b.created||'').localeCompare(a.created||''));
- const posts=communityFilter==='all'?allPosts:allPosts.filter(p=>p.type===communityFilter);
+ if(communityFilter==='mine'&&!user)communityFilter='all';
+ const posts=communityFilter==='all'?allPosts:communityFilter==='mine'?allPosts.filter(ownsPost):allPosts.filter(p=>p.type===communityFilter);
  const filters=[['all','Все'],['player','Ищу команду'],['team','Нужны игроки'],['tournament','Турниры']];
+ if(user)filters.push(['mine','Мои объявления']);
  root.innerHTML=
   '<div class="community-toolbar"><button class="primary" data-post-create="player">+ Ищу команду</button><button class="secondary" data-post-create="team">+ Нужны игроки</button><button class="secondary" data-partner="tournament">🏆 Предложить турнир · партнёрство</button></div>'+
   '<div class="community-feed-head"><div><h2>Футбольное сообщество</h2><p class="notice">Находи игроков и команды. Размещение турниров — по согласованию с «ПОЛЕМ» на коммерческой основе.</p></div><span class="community-post-counter">'+posts.length+' объявлений</span></div>'+
@@ -156,7 +158,7 @@ function render(){
     (url?'<a class="community-contact-button" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">'+cta+' · '+(p.contact_platform==='telegram'?'Telegram':'ВКонтакте')+'</a>':'<p class="notice">Контакт автора не указан.</p>')+
     (ownsPost(p)?'<div class="community-own-actions"><button type="button" class="secondary" data-post-edit="'+escapeHTML(p.id)+'">✎ Редактировать</button><button type="button" class="secondary danger-text" data-post-delete="'+escapeHTML(p.id)+'">Удалить</button></div>':'')+
     '</article>';
-  }).join('')||'<div class="card"><h3>Объявлений пока нет</h3><p>Стань первым: размести анкету игрока, запрос команды или объявление о турнире.</p></div>')+'</div>'+
+  }).join('')||'<div class="card"><h3>'+(communityFilter==='mine'?'У тебя пока нет объявлений':'Объявлений пока нет')+'</h3><p>'+(communityFilter==='mine'?'Опубликуй анкету игрока или запрос команды, чтобы управлять ими здесь.':'Размести анкету игрока или запрос команды. Для турнира оставь заявку на сотрудничество.')+'</p></div>')+'</div>'+
   '<p class="notice">Контакты указаны авторами объявлений. «ПОЛЕ» не проверяет их и не передаёт ваши сообщения сторонним сервисам.</p>';
 }
 document.addEventListener('click',event=>{
