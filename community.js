@@ -38,7 +38,7 @@ const positions=[['','Выбери позицию'],['gk','Вратарь'],['de
 const formats=[['','Выбери формат'],['5v5','5×5'],['6v6','6×6'],['7v7','7×7'],['8v8','8×8'],['11v11','11×11'],['any','Любой']];
 const genders=[['','Выбери пол'],['female','Женский'],['male','Мужской']];
 const targetGenders=[['','Выбери'],['female','Женская команда'],['male','Мужская команда'],['any','Без ограничений по полу']];
-const ageGroups=[['','Выбери возрастную категорию'],['any','18 лет и старше (без ограничений)'],['18-24','18–24 года'],['25-34','25–34 года'],['35-44','35–44 года'],['45+','45 лет и старше']];
+const ageGroups=[['','Выбери возрастную категорию'],['under18','До 18 лет'],['any','18 лет и старше (без ограничений)'],['18-24','18–24 года'],['25-34','25–34 года'],['35-44','35–44 года'],['45+','45 лет и старше']];
 const teamKinds=[['','Выбери тип команды'],['regular','Обычная женская команда (без ограничений)'],['moms','Команда мам']];
 const playerGoals=[['','Выбери цель поиска'],['training','Для регулярных тренировок'],['tournament','Для участия в турнирах'],['both','Для тренировок и турниров'],['matches','Для любительских матчей без постоянных тренировок']];
 const skillLabels=Object.fromEntries(skills),positionLabels=Object.fromEntries(positions),formatLabels=Object.fromEntries(formats),genderLabels=Object.fromEntries(genders);
@@ -75,6 +75,7 @@ const detailsLabel=(p)=>{
   ['Где и когда играете',d.schedule]
  ]:[
   ['Название турнира',d.tournament_name],['Форматы',chosenFormats(d).join(', ')],
+  ['Возрастная категория',Object.fromEntries(ageGroups)[d.age_group]],
   ['Категория',({female:'Женские команды',male:'Мужские команды',any:'Все команды'})[d.team_gender]],
   ['Взнос',d.tournament_fee!==''&&d.tournament_fee!=null?d.tournament_fee+' ₽ / команду':''],
   ['Место проведения',d.venue],['Свободных мест',d.slots?String(d.slots):'']
@@ -123,6 +124,7 @@ function keyChips(p){
   push(Object.fromEntries(ageGroups)[d.age_group]);
  }else{
   push(chosenFormats(d).join(' / '));
+  push(Object.fromEntries(ageGroups)[d.age_group]);
   push(d.tournament_fee!==undefined?('Взнос: '+d.tournament_fee+' ₽'):'');
  }
  return chips.slice(0,6).join('');
@@ -208,6 +210,7 @@ function newPost(type){
    input('Дата турнира','date','','required type="date"')+
    formatMulti({})+
    selection('Какие команды участвуют','team_gender',targetGenders)+
+   selection('Возрастная категория участников','age_group',ageGroups)+
    input('Взнос за участие, ₽ за команду (0 — бесплатно)','tournament_fee','0','required type="number" min="0" max="1000000"')+
    input('Место проведения','venue','','required maxlength="150"')+
    input('Количество свободных мест для команд','slots','','type="number" min="1" max="256"')+'</section>';
