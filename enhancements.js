@@ -285,7 +285,7 @@ const POLE_FORMATS=[['5v5','5×5'],['6v6','6×6'],['7v7','7×7'],['8v8','8×8'],
 const POLE_FORMAT_NAMES=Object.fromEntries(POLE_FORMATS);
 const POLE_SKILL_NAMES={new:'Новичок',amateur:'Любитель',confident:'Уверенно играю',advanced:'Продвинутый'};
 const POLE_POSITION_NAMES={any:'Любая позиция',gk:'Вратарь',def:'Защитник',mid:'Полузащитник',fwd:'Нападающий'};
-const POLE_AGE_NAMES={any:'18 лет и старше', '18-24':'18–24 года','25-34':'25–34 года','35-44':'35–44 года','45+':'45 лет и старше'};
+const POLE_AGE_NAMES={under18:'До 18 лет (16–17 лет)',any:'18 лет и старше', '18-24':'18–24 года','25-34':'25–34 года','35-44':'35–44 года','45+':'45 лет и старше'};
 const POLE_GENDER_NAMES={female:'Женская',male:'Мужская',any:'Без ограничений'};
 const POLE_ACCOUNT_FORMATS=o=>{
  const list=Array.isArray(o?.formats)&&o.formats.length?o.formats:(o?.format?[o.format]:[]);
@@ -393,13 +393,13 @@ function showAccountProfile(){
   accountItem('Позиция',POLE_POSITION_NAMES[user.position]||'Не указано');
  modal('Личный кабинет',
   '<div class="account-identity premium">'+photo+'<div class="account-identity-text"><div class="account-identity-caption">'+(isTeam?'Профиль команды':'Профиль игрока')+'</div><strong>'+E(user.name||'Без названия')+'</strong><span>📍 '+E(user.city||'Город не указан')+'</span></div></div>'+
-  '<div class="account-photo-row"><span class="notice">'+(user.avatar_path?'Фото видно другим посетителям твоих объявлений.':'Можно добавить фотографию или логотип команды.')+'</span><button type="button" class="secondary" id="pole-change-photo">📷 '+(user.avatar_path?'Изменить фото':'Добавить фото')+'</button></div>'+
+  '<div class="account-photo-row"><span class="notice">'+(isTeam?(user.avatar_path?'Логотип отображается в объявлениях команды.':'Можешь добавить логотип своей команды.'):(user.avatar_path?'Твоё фото видно в объявлениях и составах игр.':'Можешь добавить фотографию профиля.'))+'</span><button type="button" class="secondary" id="pole-change-photo">📷 '+(isTeam?(user.avatar_path?'Изменить логотип':'Добавить логотип'):(user.avatar_path?'Изменить фото':'Добавить фото'))+'</button></div>'+
   '<div class="account-section-title">'+(isTeam?'О команде':'Моя анкета')+'</div>'+
   '<div class="account-detail-grid">'+detail+'</div>'+
   '<div class="account-section-title">Футбольные предпочтения</div>'+
   '<div class="account-detail-grid">'+accountItem('Форматы',POLE_FORMAT_LABEL(user))+(isTeam?'':accountItem('Поездки',user.trips?'Интересны':'Не интересны'))+'</div>'+
   (user.bio?'<div class="account-about"><strong>О себе</strong><p>'+E(user.bio)+'</p></div>':'')+
-  '<p class="account-privacy-note">Фотография загружается только по желанию. Электронная почта остаётся скрытой.</p>'+
+  '<p class="account-privacy-note">'+(isTeam?'Логотип добавляется по желанию.':'Фото добавляется по желанию.')+' Электронная почта остаётся скрытой.</p>'+
   '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Редактировать анкету</button><button type="button" class="secondary" id="pole-logout">Выйти</button></div>');
  document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
  document.querySelector('#pole-change-photo').onclick=()=>{editAccountProfile();const chooser=document.querySelector('#pole-photo-input');chooser?.scrollIntoView({block:'center'});chooser?.click()};
@@ -412,10 +412,10 @@ function editAccountProfile(){
  '<p class="account-edit-intro">Изменения сохранятся в «ПОЛЕ» и будут видны в новых объявлениях и соответствующих карточках.</p>'+
  '<form id="pole-profile-form" novalidate><div class="account-edit-section"><h3>'+(isTeam?'Информация о команде':'Личные данные и футбол')+'</h3>'+
  (isTeam?teamFormBits({...user,team_gender:user.team_gender}):playerFormBits(user))+
- '</div><div class="account-edit-section"><h3>Фото '+(isTeam?'или логотип':'профиля')+' <span class="optional-label">(по желанию)</span></h3>'+
- '<p class="notice">JPG, PNG или WebP до 2 МБ. Фото будет видно посетителям объявлений и участникам игр. Можно оставить без фотографии.</p>'+
+ '</div><div class="account-edit-section"><h3>'+(isTeam?'Логотип команды':'Фотография игрока')+' <span class="optional-label">(по желанию)</span></h3>'+
+ '<p class="notice">'+(isTeam?'Логотип команды будет виден в её объявлениях.':'Фото будет видно в объявлениях и составах игр.')+' JPG, PNG или WebP до 2 МБ. Можно оставить пустым.</p>'+
  '<input id="pole-photo-input" name="avatar" type="file" accept="image/jpeg,image/png,image/webp">'+
- (user.avatar_path?'<label class="checkline"><input type="checkbox" name="remove_avatar"> Удалить текущее фото</label>':'')+
+ (user.avatar_path?'<label class="checkline"><input type="checkbox" name="remove_avatar"> '+(isTeam?'Удалить логотип':'Удалить фото')+'</label>':'')+
  '</div><p class="form-validation-message" role="alert"></p>'+
  '<div class="account-edit-actions"><button class="primary" type="submit">Сохранить изменения</button><button class="secondary" type="button" id="pole-cancel-profile">Назад</button></div></form>');
  setupProfileForm(document.querySelector('#pole-profile-form'));
@@ -432,9 +432,9 @@ function authAccount(mode='login'){
   (signup?'<input type="hidden" name="account_type" value="player">':'')+
   '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label>'+
   '<label>Пароль'+(signup?' (минимум 8 символов)':'')+'<input type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" '+(signup?'minlength="8" ':'')+'required></label>'+
-  (signup?'<div data-signup-section="player">'+playerFormBits({})+'</div><div data-signup-section="team" hidden>'+teamFormBits({})+'</div><p class="notice">Фотографию можно добавить после подтверждения почты в личном кабинете.</p>':'')+
+  (signup?'<div data-signup-section="player">'+playerFormBits({})+'</div><div data-signup-section="team" hidden>'+teamFormBits({})+'</div><p class="notice">Фото игрока или логотип команды можно добавить позже в личном кабинете.</p>':'')+
   '<p class="form-validation-message" role="alert"></p><button class="primary" type="submit" style="margin-top:16px">'+(signup?'Зарегистрироваться':'Войти')+'</button></form>'+
-  '<p><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
+  '<p id="pole-confirm-help" hidden><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
  document.querySelector('#switch-login').onclick=()=>authAccount('login');
  document.querySelector('#switch-signup').onclick=()=>authAccount('signup');
  const form=document.querySelector('#pole-auth-form');
@@ -539,7 +539,7 @@ document.addEventListener('submit',async ev=>{
      emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/',data:extra
     }});
     if(error)throw error;
-    if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. Если письма нет, нажми «Отправить письмо подтверждения повторно».';return}
+    if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. Если письма нет, нажми «Отправить письмо подтверждения повторно».';const help=form.querySelector('#pole-confirm-help');if(help)help.hidden=false;return}
    }else{
     const {error}=await sb.auth.signInWithPassword({email:d.email,password:d.password});if(error)throw error;
    }
@@ -572,6 +572,7 @@ document.addEventListener('submit',async ev=>{
   await syncAccount();showAccountProfile();toast('Изменения сохранены');
   document.dispatchEvent(new Event('pole-profile-updated'));
  }catch(error){
+  if(id==='pole-auth-form'&&(error.code==='email_not_confirmed'||/email\s+not\s+confirmed|email\s+not\s+verified/i.test(error.message||''))){const help=form.querySelector('#pole-confirm-help');if(help)help.hidden=false}
   if(message)message.textContent='Не удалось сохранить: '+(error.message||'попробуй позже');
  }finally{
   if(button){button.disabled=false;button.textContent=id==='pole-auth-form'?(form.dataset.mode==='signup'?'Зарегистрироваться':'Войти'):'Сохранить изменения'}
