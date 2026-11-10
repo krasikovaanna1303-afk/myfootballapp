@@ -17,7 +17,10 @@ if(f.id==='tripform'){trips.unshift({id:uid(),city:d.city,date:d.date,capacity:+
 if(f.id==='reviewform'){const o=fields.find(x=>x.id===d.id);if(o){o.reviews.push({author:user.name,text:d.review,rating:+d.rating});toast('Отзыв добавлен');renderFields()}}
 save();$('#modal').close()});
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===b.dataset.view));if(b.dataset.view==='fields')setTimeout(()=>map?.invalidateSize(),80)});
-document.querySelector('#brand-home')?.addEventListener('click',()=>{document.querySelector('#main-nav [data-view="fields"]')?.click();window.scrollTo({top:0,behavior:'smooth'})});
+const poleHome=document.querySelector('#brand-home');
+const poleGoHome=()=>{document.querySelector('#main-nav [data-view="fields"]')?.click();window.scrollTo({top:0,behavior:'smooth'})};
+poleHome?.addEventListener('click',poleGoHome);
+poleHome?.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();poleGoHome()}});
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
 document.addEventListener('change',e=>{if(e.target.matches('#gameform input[name="unlimited"]')){const f=e.target.form,box=f.querySelector('.game-capacity-label'),qty=f.elements.capacity;qty.hidden=e.target.checked;qty.disabled=e.target.checked;qty.required=!e.target.checked;}});
 function add(type,coord){if(!needUser())return;
