@@ -26,7 +26,7 @@ create table if not exists public.pole_posts (
  title text not null check(length(title) between 2 and 100),
  city text not null check(length(city) between 2 and 80),
  event_date date,
- description text not null check(length(description) between 10 and 2000),
+ description text not null default '' check(length(description)<=2000),
  author text not null check(length(author) between 1 and 80),
  created_at timestamptz not null default now()
 );
