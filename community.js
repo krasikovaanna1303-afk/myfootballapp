@@ -53,6 +53,8 @@ const formatMulti=(source={})=>{
  return '<fieldset class="profile-formats" data-community-formats><legend>Формат футбола</legend><p class="notice">Можно выбрать несколько. «Любой» — вместо конкретных форматов.</p><div class="format-choices">'+formats.filter(([v])=>v).map(([v,caption])=>'<label class="format-option"><input type="checkbox" name="formats" value="'+v+'" '+(wanted.includes(v)?'checked':'')+'><span>'+caption+'</span></label>').join('')+'</div></fieldset>';
 };
 const rows=()=>read('community_posts');
+const currentPosts=()=>window.POLE_SHARED_POSTS||rows();
+const ownsPost=p=>!!user&&(window.POLE_SUPABASE_CLIENT?String(p.creator_id)===String(user.id):p.author===user.name);
 const input=(label,name,value='',attrs='required maxlength="100"')=>'<label>'+label+'<input name="'+name+'" value="'+escapeHTML(value)+'" '+attrs+'></label>';
 const selection=(label,name,options,chosen='')=>'<label>'+label+'<select name="'+name+'" required>'+options.map(([v,title])=>'<option value="'+escapeHTML(v)+'"'+(!v?' disabled':'')+(String(chosen)===v?' selected':'')+'>'+escapeHTML(title)+'</option>').join('')+'</select></label>';
 const detailsLabel=(p)=>{
@@ -70,11 +72,11 @@ const detailsLabel=(p)=>{
   ['Нужно игроков',d.spots?String(d.spots):''],
   ['Цель набора',({regular:'В постоянный состав',match:'На отдельный матч',tournament:'На конкретный турнир'})[d.purpose]],
   ['Турнир',d.purpose==='tournament'?d.tournament_name:''],
-  ['Дата турнира',d.purpose==='tournament'?d.tournament_date:''],
+  ['Дата начала турнира',d.purpose==='tournament'?d.tournament_date:''],
   ['Взнос за турнир',d.purpose==='tournament'&&d.tournament_fee!==''&&d.tournament_fee!=null?d.tournament_fee+' ₽ / игрок':''],
   ['Где и когда играете',d.schedule]
  ]:[
-  ['Название турнира',d.tournament_name],['Форматы',chosenFormats(d).join(', ')],
+  ['Название турнира',d.tournament_name],['Дата начала турнира',p.date||d.tournament_date],['Дата окончания',d.end_date],['Форматы',chosenFormats(d).join(', ')],
   ['Возрастная категория',Object.fromEntries(ageGroups)[d.age_group]],
   ['Категория',({female:'Женские команды',male:'Мужские команды',any:'Все команды'})[d.team_gender]],
   ['Взнос',d.tournament_fee!==''&&d.tournament_fee!=null?d.tournament_fee+' ₽ / команду':''],
@@ -135,8 +137,8 @@ function render(){
  const posts=communityFilter==='all'?allPosts:allPosts.filter(p=>p.type===communityFilter);
  const filters=[['all','Все'],['player','Ищу команду'],['team','Нужны игроки'],['tournament','Турниры']];
  root.innerHTML=
-  '<div class="community-toolbar"><button class="primary" data-post-create="player">+ Ищу команду</button><button class="secondary" data-post-create="team">+ Нужны игроки</button><button class="secondary" data-post-create="tournament">+ Объявить турнир</button></div>'+
-  '<div class="community-feed-head"><div><h2>Футбольное сообщество</h2><p class="notice">Находи игроков, команды и турниры, связывайся напрямую.</p></div><span class="community-post-counter">'+posts.length+' объявлений</span></div>'+
+  '<div class="community-toolbar"><button class="primary" data-post-create="player">+ Ищу команду</button><button class="secondary" data-post-create="team">+ Нужны игроки</button><button class="secondary" data-partner="tournament">🏆 Предложить турнир · партнёрство</button></div>'+
+  '<div class="community-feed-head"><div><h2>Футбольное сообщество</h2><p class="notice">Находи игроков и команды. Размещение турниров — по согласованию с «ПОЛЕМ» на коммерческой основе.</p></div><span class="community-post-counter">'+posts.length+' объявлений</span></div>'+
   '<div class="community-switch" role="group" aria-label="Фильтр объявлений">'+filters.map(([v,label])=>'<button type="button" data-community-filter="'+v+'" class="'+(v===communityFilter?'active':'')+'" aria-pressed="'+(v===communityFilter)+'">'+label+'</button>').join('')+'</div>'+
   '<div class="community-feed">'+(posts.map(p=>{
    const url=contactUrl(p),cta=p.type==='player'?'Позвать в команду':p.type==='team'?'Написать команде':'Связаться с организатором';
@@ -148,10 +150,11 @@ function render(){
     '<span class="community-post-label">'+caption+'</span></div>'+
     '<h3>'+escapeHTML(p.title)+'</h3>'+
     '<div class="community-chips">'+keyChips(p)+'</div>'+
-    (d.purpose==='tournament'&&d.tournament_name?'<p class="community-competition">🏆 '+escapeHTML(d.tournament_name)+(d.tournament_date?' · '+escapeHTML(d.tournament_date):'')+'</p>':'')+
+    (p.type==='tournament'&&p.date?'<p class="community-competition">🏆 Начало: '+escapeHTML(p.date)+(d.end_date?' · Окончание: '+escapeHTML(d.end_date):'')+'</p>':d.purpose==='tournament'&&d.tournament_name?'<p class="community-competition">🏆 '+escapeHTML(d.tournament_name)+(d.tournament_date?' · с '+escapeHTML(d.tournament_date):'')+'</p>':'')+
     '<p class="community-post-summary">'+escapeHTML(p.description||'')+'</p>'+
     '<details class="community-post-extra"><summary>Подробнее об объявлении</summary><div class="post-details">'+detailsLabel(p)+'</div></details>'+
     (url?'<a class="community-contact-button" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">'+cta+' · '+(p.contact_platform==='telegram'?'Telegram':'ВКонтакте')+'</a>':'<p class="notice">Контакт автора не указан.</p>')+
+    (ownsPost(p)?'<div class="community-own-actions"><button type="button" class="secondary" data-post-edit="'+escapeHTML(p.id)+'">✎ Редактировать</button><button type="button" class="secondary danger-text" data-post-delete="'+escapeHTML(p.id)+'">Удалить</button></div>':'')+
     '</article>';
   }).join('')||'<div class="card"><h3>Объявлений пока нет</h3><p>Стань первым: размести анкету игрока, запрос команды или объявление о турнире.</p></div>')+'</div>'+
   '<p class="notice">Контакты указаны авторами объявлений. «ПОЛЕ» не проверяет их и не передаёт ваши сообщения сторонним сервисам.</p>';
@@ -170,10 +173,11 @@ function contactFields(){
  '<p class="notice" id="post-contact-help">Для Telegram подойдёт @username, для VK — id123456, числовой ID или короткий адрес профиля.</p></fieldset>';
 }
 
-function newPost(type){
+function newPost(type,existing=null){
  if(!profile())return;
+ if(type==='tournament'&&!existing){document.querySelector('[data-partner="tournament"]')?.click();return}
  if(type==='player'&&user?.account_type==='team'){toast('Искать команду можно из аккаунта игрока');return}
- const demo=window.POLE_SUPABASE_CLIENT?'После публикации объявление увидят другие пользователи.':'Пока это локальный черновик объявления.';
+ const demo=existing?'Изменения в объявлении будут сохранены после нажатия кнопки.':window.POLE_SUPABASE_CLIENT?'После публикации объявление увидят другие пользователи.':'Пока это локальный черновик объявления.';
  const common='<label>Дополнительная информация<textarea name="description" maxlength="2000" minlength="10" required placeholder="Уточни пожелания, особенности или условия">'+escapeHTML(type==='player'&&user?.bio?user.bio:'')+'</textarea></label>';
  const userNick=escapeHTML(user?.name||'Игрок');
  let extra='';
@@ -201,13 +205,14 @@ function newPost(type){
    selection('Цель набора','purpose',[['','Выбери цель набора'],['regular','Для регулярных тренировок и игр'],['tournament','Для участия в конкретном турнире'],['match','Для отдельного матча']])+
    '<div class="tournament-fields" id="post-tournament-fields" hidden>'+
    input('Название турнира','tournament_name','','maxlength="120" placeholder="Как называется турнир"')+
-   input('Дата турнира','tournament_date','','type="date"')+
+   input('Дата начала турнира','tournament_date','','type="date"')+
    input('Взнос за участие в турнире, ₽ за игрока (0 — бесплатно)','tournament_fee','0','type="number" min="0" max="1000000"')+'</div>'+
    input('Где и когда играет команда','schedule','','maxlength="150" placeholder="Стадион, дни и время тренировок или игр"')+'</section>';
  }else if(type==='tournament'){
   extra='<section class="community-form-section"><h3>О турнире</h3>'+
    input('Название турнира','tournament_name','','required maxlength="120"')+
-   input('Дата турнира','date','','required type="date"')+
+   input('Дата начала турнира','date','','required type="date"')+
+   input('Дата окончания турнира (если несколько дней)','end_date','','type="date"')+
    formatMulti({})+
    selection('Какие команды участвуют','team_gender',targetGenders)+
    selection('Возрастная категория участников','age_group',ageGroups)+
@@ -215,13 +220,24 @@ function newPost(type){
    input('Место проведения','venue','','required maxlength="150"')+
    input('Количество свободных мест для команд','slots','','type="number" min="1" max="256"')+'</section>';
  }
- show(types[type],'<p class="notice">'+demo+'</p><form id="community-post-form"><input type="hidden" name="type" value="'+type+'">'+
+ show(existing?'Редактировать объявление':types[type],'<p class="notice">'+demo+'</p><form id="community-post-form"><input type="hidden" name="type" value="'+type+'">'+
  '<section class="community-form-section"><h3>Объявление</h3>'+
  input('Заголовок','title',type==='player'?'Ищу футбольную команду':type==='team'?'Команде нужны игроки':'Открыта регистрация на турнир','required maxlength="100" minlength="2"')+
  input('Город','city',user?.city||'','required maxlength="80" minlength="2"')+'</section>'+
  extra+'<section class="community-form-section"><h3>Остальное</h3>'+common+'</section>'+
- contactFields()+'<button class="primary post-submit">Опубликовать объявление</button></form>');
+ contactFields()+'<p class="form-validation-message" role="alert" id="community-post-message"></p><button class="primary post-submit" type="submit">'+(existing?'Сохранить изменения':'Опубликовать объявление')+'</button></form>');
  const form=document.querySelector('#community-post-form');
+ if(existing){
+  form.dataset.editId=existing.id;
+  const source={...existing.details,title:existing.title,city:existing.city,date:existing.date,description:existing.description,contact_platform:existing.contact_platform,contact_handle:existing.contact_handle};
+  for(const [key,val] of Object.entries(source)){
+   if(key==='formats'||val===null||val===undefined)continue;
+   const field=form.elements.namedItem(key);
+   if(field&&typeof field.value==='string')field.value=String(val);
+  }
+  const selected=existing.details?.formats||[existing.details?.format].filter(Boolean);
+  form.querySelectorAll('input[name="formats"]').forEach(box=>{box.checked=selected.includes(box.value)});
+ }
  syncConditionalFields(form);
  syncContactHelp(form);
  form.querySelectorAll('input[name="formats"]').forEach(box=>box.addEventListener('change',()=>{
@@ -262,6 +278,22 @@ function syncContactHelp(form){
 }
 
 document.addEventListener('click',e=>{const b=e.target.closest('[data-post-create]');if(b)newPost(b.dataset.postCreate)});
+document.addEventListener('click',async e=>{
+ const edit=e.target.closest('[data-post-edit]'),del=e.target.closest('[data-post-delete]');
+ if(!edit&&!del)return;
+ const id=(edit||del).dataset.postEdit||(edit||del).dataset.postDelete;
+ const post=currentPosts().find(p=>String(p.id)===String(id));
+ if(!post||!ownsPost(post)){toast('Редактировать или удалять можно только свои объявления');return}
+ if(edit){newPost(post.type,post);return}
+ if(!confirm('Удалить объявление «'+post.title+'»? Восстановить его не получится.'))return;
+ const button=del;button.disabled=true;
+ if(window.POLE_SUPABASE_CLIENT){
+  if(typeof window.POLE_DELETE_POST==='function')await window.POLE_DELETE_POST(id);else{toast('Удаление пока недоступно');button.disabled=false}
+ }else{
+  write('community_posts',rows().filter(p=>String(p.id)!==String(id)));
+  render();toast('Объявление удалено из этого браузера');
+ }
+});
 document.addEventListener('change',e=>{
  const form=e.target.closest('#community-post-form');if(!form)return;
  if(e.target.matches('select[name="purpose"],select[name="team_gender"]'))syncConditionalFields(form);
@@ -278,6 +310,7 @@ function postPayload(form){
  }
 
  const selected=[...new Set(new FormData(form).getAll('formats'))];
+ if(d.type==='tournament'&&d.end_date&&d.date&&d.end_date<d.date){form.querySelector('#community-post-message').textContent='Дата окончания не может быть раньше даты начала.';return null}
  if(!selected.length){
   const group=form.querySelector('[data-community-formats]');
   group?.scrollIntoView({behavior:'smooth',block:'center'});
@@ -301,12 +334,15 @@ document.addEventListener('submit',e=>{
   write('field_proposals',list);toast('Предложение сохранено: ожидает модерацию');
  }else{
   const data=postPayload(form);if(!data)return;
-  const list=rows();list.push({id:crypto.randomUUID(),...data,author:user.name,created:new Date().toISOString()});
-  write('community_posts',list);render();toast('Черновик объявления сохранён');
+  const list=rows();
+  if(form.dataset.editId){const post=list.find(p=>String(p.id)===String(form.dataset.editId));if(post&&ownsPost(post))Object.assign(post,data);toast('Черновик объявления изменён')}
+  else{if(data.type==='tournament'){toast('Турниры публикуются только по партнёрству');return}list.push({id:crypto.randomUUID(),...data,author:user.name,created:new Date().toISOString()});toast('Черновик объявления сохранён')}
+  write('community_posts',list);render();
  }
  document.querySelector('#modal').close();
 });
 window.POLE_POST_PAYLOAD=postPayload;
 document.addEventListener('pole-shared-posts',render);
+document.addEventListener('pole-account-updated',render);
 render();
 })();
