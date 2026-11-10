@@ -184,7 +184,16 @@ document.addEventListener('submit',async e=>{
   if(form.id==='gameform')await saveGame(form);
   if(form.id==='community-post-form')await savePost(form);
   if(form.id==='community-field-form')await saveFeedback(form);
- }catch(err){errorNotice(err)}
+ }catch(err){
+  if(form.id==='gameform'){
+   const hint=form.querySelector('#game-form-hint');
+   const schemaProblem=/column.*does not exist|schema cache|Could not find.*column/i.test(err.message||'');
+   const feedback=schemaProblem?'Сначала выполни SQL-обновление «game-details-and-search.sql» в Supabase.':'Не удалось создать игру: '+(err.message||'повтори попытку');
+   if(hint)hint.textContent=feedback;
+   toast(feedback);
+  }
+  errorNotice(err)
+ }
  finally{if(button){button.disabled=false;button.textContent=button.dataset.previousText||'Сохранить'}}
 },true);
 document.addEventListener('click',async e=>{
