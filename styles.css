@@ -468,3 +468,19 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
  .account-identity.premium{padding:16px}
  .account-photo-row button{width:100%}
 }
+
+/* Управление своими объявлениями и заявки на сотрудничество */
+.community-own-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px;border-top:1px solid #e8eee4;padding-top:13px}
+.community-own-actions button{flex:1;min-height:40px;font-size:13px;padding:8px 12px}
+.community-own-actions .danger-text{color:#a63e37;border-color:#e6c4c0;background:#fffafa}
+.community-own-actions .danger-text:hover{background:#fcebe9}
+.partner-date-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.partner-date-grid label{margin:0;min-width:0}
+.partner-date-grid input{width:100%;min-width:0}
+.partner-submitted{border:1px solid #daead5;background:#f8fcf4;border-radius:15px;padding:18px}
+.partner-submitted h3{margin:0 0 12px;color:#21432b}
+.partner-submitted p{line-height:1.55}
+#partner-lead-form .checkline{display:flex;flex-direction:row;align-items:flex-start;gap:9px;line-height:1.4}
+#partner-lead-form .checkline input{width:18px;height:18px;flex:none;margin:2px 0 0}
+#partner-lead-form .form-validation-message{color:#9d352a;font-weight:700;margin:10px 0}
+@media(max-width:600px){.partner-date-grid{grid-template-columns:1fr}.community-own-actions{flex-direction:column}.community-own-actions button{width:100%}}
