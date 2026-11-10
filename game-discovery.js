@@ -168,6 +168,7 @@ card=function(x,kind){
  const spots=limited?Math.max(0,capacity-n):null;
  const full=limited&&spots===0;
  const joined=!!user&&x.attendees?.includes(user.id);
+ const teamOnly=user?.account_type==='team';
  const pct=limited&&capacity>0?Math.min(100,Math.round(n/capacity*100)):0;
  const cost=x.fee_amount===null||x.fee_amount===undefined?'Стоимость не указана':Number(x.fee_amount)===0?'Бесплатно':Number(x.fee_amount).toLocaleString('ru-RU')+' ₽ / игрок';
  const chips=[
@@ -192,8 +193,8 @@ card=function(x,kind){
  (description?'<p class="pole-game-description">'+esc(description)+'</p>':'')+
  '<p class="pole-game-organizer">Организатор: '+esc(x.organizer||'Не указан')+'</p>'+
  (window.POLE_GAME_ROSTER_HTML?.(x)||'')+
- '<div class="pole-game-actions"><button type="button" class="primary" data-kind="game" data-join="'+esc(x.id)+'"'+(full&&!joined?' disabled':'')+'>'+
- (joined?'Отменить участие':full?'Мест нет':'Присоединиться')+'</button>'+
+ '<div class="pole-game-actions"><button type="button" class="primary" data-kind="game" data-join="'+esc(x.id)+'"'+((full&&!joined)||teamOnly?' disabled':'')+'>'+
+ (teamOnly?'Только для игроков':joined?'Отменить участие':full?'Мест нет':'Присоединиться')+'</button>'+
  (joined?'<button type="button" class="secondary game-chat-trigger" data-game-chat="'+esc(x.id)+'">💬 Чат игры</button>':'')+'</div>'+
  '</article>';
 };
