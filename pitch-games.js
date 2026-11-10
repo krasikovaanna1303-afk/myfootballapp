@@ -27,10 +27,15 @@ window.showField=function(id){
    document.querySelector('#modal').close();
    add('game');
    const form=document.querySelector('#gameform');if(!form)return;
-   const selector=form.elements.field;
-   if(selector && ![...selector.options].some(o=>o.value===f.name))selector.add(new Option(f.name,f.name));
-   if(selector)selector.value=f.name;
-   if(form.elements.fieldId)form.elements.fieldId.value=String(f.id);
+   if(typeof window.POLE_SET_GAME_FIELD==='function')window.POLE_SET_GAME_FIELD(f);
+   else{
+    const selector=form.elements.field;
+    if(selector?.tagName==='SELECT'){
+     if(![...selector.options].some(o=>o.value===f.name))selector.add(new Option(f.name,f.name));
+     selector.value=f.name;
+    }
+    if(form.elements.fieldId)form.elements.fieldId.value=String(f.id);
+   }
  };
  const btn=document.querySelector('#pitch-create-game');if(btn)btn.onclick=create;
  const older=document.querySelector('#field-game');if(older){older.textContent='★ Оставить отзыв';older.classList.remove('primary');older.classList.add('secondary');older.onclick=()=>{const review=document.querySelector('[data-community-review]');if(review)review.click();else toast('Отзывы временно недоступны');};}
