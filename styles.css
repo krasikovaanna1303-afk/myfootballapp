@@ -488,3 +488,59 @@ body{margin:0;background:#f6f7f1;color:#15291e;font-family:system-ui,Arial}*{box
 /* Внешний вид логотипа не изменён; доступен переход на главную. */
 header #brand-home,header #brand-home *{cursor:pointer!important}
 header #brand-home:focus-visible{outline:2px solid #c9f269;outline-offset:5px;border-radius:4px}
+
+/* ПОЛЕ: подбор матчей и подробные карточки игр — без изменений других разделов */
+#games .game-filters{background:#fff;border:1px solid #dfe8dc;border-radius:19px;padding:19px 21px 16px;margin:18px 0 23px;box-shadow:0 7px 25px #244d2c0d}
+#games .game-filters-intro{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px}
+#games .game-filters-intro h3{font-size:19px;letter-spacing:-.4px;color:#1b3c28;margin:0 0 3px}
+#games .game-filters-intro p{font-size:12px;margin:0;color:#6b7f70}
+#games .game-filter-today{white-space:nowrap;flex:none;font-weight:800;border-color:#c4daae;color:#285437}
+#games .game-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:13px}
+#games .game-filter-grid label{font-size:12px;font-weight:750;color:#355442;margin:0;min-width:0}
+#games .game-filter-grid input,#games .game-filter-grid select{display:block;width:100%;min-width:0;max-width:none;padding:10px 10px;min-height:43px;border:1px solid #d5e0d3;background:#fcfefb;border-radius:10px;font-size:13px}
+#games .game-filter-grid input:focus-visible,#games .game-filter-grid select:focus-visible{outline:2px solid #8dbb72;outline-offset:1px}
+#games .game-filter-bottom{margin-top:15px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#games .game-only-available{display:flex;align-items:center;gap:9px;margin:0;font-size:13px;font-weight:700;color:#31543c;cursor:pointer}
+#games .game-only-available input{width:19px;height:19px;margin:0;flex:none;accent-color:#295b3c}
+#games .game-result-count{margin:0 0 13px;font-size:13px;color:#607662;font-weight:700}
+#game-list.cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:19px;align-items:stretch}
+#game-list .pole-game-card{background:#fff;border:1px solid #dce7d8;box-shadow:0 5px 24px #25412712;border-radius:19px;padding:21px;min-width:0;display:flex;flex-direction:column;gap:0}
+.pole-game-card-head{display:flex;align-items:center;justify-content:space-between;gap:9px}
+.pole-game-eyebrow{font-size:11px;font-weight:850;color:#597d5d;letter-spacing:1.1px}
+.pole-game-space{background:#dcf6b8;color:#24502d;border-radius:100px;padding:7px 11px;font-size:12px;font-weight:800;text-align:center;white-space:nowrap}
+.pole-game-space.full{background:#f3ebe7;color:#944f42}
+.pole-game-card h3{font-size:21px;line-height:1.3;letter-spacing:-.6px;margin:16px 0 10px;color:#1a3624;overflow-wrap:anywhere}
+.pole-game-datetime{font-size:14px;font-weight:750;color:#2c4a34;margin:0 0 8px}
+.pole-game-location{font-size:13px;line-height:1.5;margin:0 0 16px;color:#6b7c6c;overflow-wrap:anywhere}
+.pole-game-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:17px}
+.pole-game-chips span{font-size:12px;line-height:1.35;background:#eff5ec;color:#385744;border-radius:9px;padding:6px 9px;font-weight:650}
+.pole-game-chips span.free{background:#dcf8b7;color:#29522c;font-weight:800}
+.pole-game-chips span.cost{background:#f5f1e9;color:#6d5b3d}
+.pole-game-progress{background:#f8fbf6;border:1px solid #edf2e8;border-radius:12px;padding:11px 12px;margin-bottom:15px}
+.pole-game-progress-label{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:#66806a}
+.pole-game-progress-label strong{color:#264832;font-size:13px}
+.pole-game-progress-track{height:8px;background:#e5eae1;border-radius:100px;overflow:hidden;margin-top:9px}
+.pole-game-progress-track>div{height:100%;border-radius:100px;background:#9bd360;transition:width .2s}
+.pole-game-description{font-size:13px;color:#526655;margin:0 0 14px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.pole-game-organizer{font-size:12px;color:#637762;margin:0 0 10px;overflow-wrap:anywhere}
+.pole-game-card .game-roster{margin:2px 0 15px}
+.pole-game-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:auto;padding-top:12px}
+.pole-game-actions button{flex:1;min-width:115px;min-height:43px;font-size:13px;margin:0!important}
+.pole-game-actions button[disabled]{cursor:not-allowed;opacity:.65}
+.pole-game-empty{grid-column:1/-1;text-align:center;padding:25px}
+.game-create-form .game-create-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.game-create-form .game-create-two>label{min-width:0}
+.game-create-form .game-create-two input,.game-create-form .game-create-two select{min-width:0;width:100%}
+.game-create-form .game-unlimited-choice{display:flex;gap:9px;align-items:center;flex-direction:row;font-size:13px;margin-top:12px}
+.game-create-form .game-unlimited-choice input{width:18px;height:18px;margin:0;accent-color:#2e603c}
+.game-create-form #pole-game-field-search{width:100%}
+.game-field-hits{max-height:216px;overflow-y:auto;border:1px solid #dee8db;background:#f8fbf4;border-radius:11px;margin-top:8px}
+.game-field-hits:empty{display:none}
+.game-field-result{width:100%;display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;border:0;background:transparent;color:#21422a;padding:10px 13px;font-size:13px;border-bottom:1px solid #e2ebdf}
+.game-field-result:last-child{border-bottom:0}
+.game-field-result:hover,.game-field-result:focus-visible{background:#e7f5d9}
+.game-field-result span{font-size:11px;color:#738773}
+.game-create-form .game-create-save{margin-top:14px;min-height:45px}
+@media(max-width:1050px){#games .game-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:720px){#games .game-filters{padding:16px}#games .game-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#game-list.cards{grid-template-columns:1fr}}
+@media(max-width:450px){#games .game-filter-grid{grid-template-columns:1fr 1fr;gap:10px}#games .game-filter-grid label:nth-child(-n+2){grid-column:1/-1}#games .game-filters-intro{align-items:flex-start}#games .game-filters-intro h3{font-size:17px}.game-create-form .game-create-two{grid-template-columns:1fr}.pole-game-card h3{font-size:19px}.pole-game-card{padding:17px!important}}
