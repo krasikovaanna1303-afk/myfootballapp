@@ -74,7 +74,7 @@ async function refreshPosts(){
  try{
    const {data,error}=await sb.from('pole_posts').select('*').order('created_at',{ascending:false}).limit(200);
    if(error)throw error;
-   window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,details:p.details||{},avatar_path:p.avatar_path||null,contact_platform:p.contact_platform||'',contact_handle:p.contact_handle||'',author:p.author,created:p.created_at}));
+   window.POLE_SHARED_POSTS=(data||[]).map(p=>({id:p.id,creator_id:p.creator_id,type:p.type,title:p.title,city:p.city,date:p.event_date||'',description:p.description,details:p.details||{},avatar_path:p.avatar_path||null,contact_platform:p.contact_platform||'',contact_handle:p.contact_handle||'',author:p.author,created:p.created_at}));
    document.dispatchEvent(new Event('pole-shared-posts'));
    clearError('объявления');
  }catch(e){errorNotice(e,'объявления')}
@@ -123,15 +123,44 @@ async function savePost(form){
  const u=await auth();if(!u)return;
  const payload=window.POLE_POST_PAYLOAD?.(form);
  if(!payload)return;
+ const editable={title:payload.title,city:payload.city,event_date:payload.date||null,
+  description:payload.description,details:payload.details||{},
+  contact_platform:payload.contact_platform,contact_handle:payload.contact_handle};
+ if(form.dataset.editId){
+  // Можно обновлять только собственные поля, но нельзя сменить тип, автора или ID.
+  const existingId=form.dataset.editId;
+  const {data,error}=await sb.from('pole_posts').update(editable)
+   .eq('id',existingId).eq('creator_id',u.id).eq('type',payload.type).select('id').maybeSingle();
+  if(error)throw error;
+  if(!data)throw new Error('Объявление не найдено или нет прав на редактирование');
+  document.querySelector('#modal')?.close();toast('Объявление обновлено');
+  await refreshPosts();return;
+ }
+ if(payload.type==='tournament'){
+  throw new Error('Публикация турниров — по согласованию с ПОЛЕМ. Оставь заявку на сотрудничество.');
+ }
  const {error}=await sb.from('pole_posts').insert({
-  creator_id:u.id,type:payload.type,title:payload.title,city:payload.city,
-  event_date:payload.date||null,description:payload.description,details:payload.details||{},
-  contact_platform:payload.contact_platform,contact_handle:payload.contact_handle,
+  creator_id:u.id,type:payload.type,...editable,
   avatar_path:user?.avatar_path||null,author:user?.name||u.user_metadata?.nickname||'Игрок'
  });
  if(error)throw error;
- document.querySelector('#modal')?.close();toast('Объявление опубликовано для всех пользователей');await refreshPosts();
+ document.querySelector('#modal')?.close();toast('Объявление опубликовано для всех пользователей');
+ await refreshPosts();
 }
+window.POLE_DELETE_POST=async id=>{
+ try{
+  const u=await auth();if(!u)return;
+  const {data,error}=await sb.from('pole_posts').delete().eq('id',id)
+   .eq('creator_id',u.id).select('id').maybeSingle();
+  if(error)throw error;
+  if(!data)throw new Error('Объявление не найдено или не принадлежит тебе');
+  toast('Объявление удалено');await refreshPosts();
+ }catch(error){
+  errorNotice(error,'удаление объявления');
+  toast('Не удалось удалить объявление. Проверь обновление Supabase.');
+  document.querySelector('[data-post-delete="'+String(id)+'"]')?.removeAttribute('disabled');
+ }
+};
 async function saveFeedback(form){
  const u=await auth();if(!u)return;
  const d=Object.fromEntries(new FormData(form).entries());
