@@ -285,7 +285,7 @@ const POLE_FORMATS=[['5v5','5×5'],['6v6','6×6'],['7v7','7×7'],['8v8','8×8'],
 const POLE_FORMAT_NAMES=Object.fromEntries(POLE_FORMATS);
 const POLE_SKILL_NAMES={new:'Новичок',amateur:'Любитель',confident:'Уверенно играю',advanced:'Продвинутый'};
 const POLE_POSITION_NAMES={any:'Любая позиция',gk:'Вратарь',def:'Защитник',mid:'Полузащитник',fwd:'Нападающий'};
-const POLE_AGE_NAMES={under18:'До 18 лет (16–17 лет)',any:'18 лет и старше', '18-24':'18–24 года','25-34':'25–34 года','35-44':'35–44 года','45+':'45 лет и старше'};
+const POLE_AGE_NAMES={under18:'До 18 лет','18-24':'18–24 года','25-34':'25–34 года','35-44':'35–44 года','45+':'45 лет и старше',any:'18 лет и старше (любая взрослая категория)'};
 const POLE_GENDER_NAMES={female:'Женская',male:'Мужская',any:'Без ограничений'};
 const POLE_ACCOUNT_FORMATS=o=>{
  const list=Array.isArray(o?.formats)&&o.formats.length?o.formats:(o?.format?[o.format]:[]);
