@@ -462,7 +462,7 @@ function authAccount(mode='login'){
   if(!email){note.textContent='Сначала укажи электронную почту.';return}
   button.disabled=true;note.textContent='Запрашиваем письмо…';
   try{
-   const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/'}});
+   const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:new URL('./',window.location.href).href}});
    if(error)throw error;
    note.textContent='Запрос принят. Проверь входящие и папку «Спам».';
   }catch(error){note.textContent='Ошибка отправки: '+(error.message||'повтори попытку')}
@@ -538,7 +538,7 @@ document.addEventListener('submit',async ev=>{
      trips:d.trips==='yes',bio:d.bio?.trim()||''
     };
     const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{
-     emailRedirectTo:'https://krasikovaanna1303-afk.github.io/myfootballapp/',data:extra
+     emailRedirectTo:new URL('./',window.location.href).href,data:extra
     }});
     if(error)throw error;
     if(!data.session){message.textContent='Проверь почту и подтверди регистрацию. Если письма нет, нажми «Отправить письмо подтверждения повторно».';const help=form.querySelector('#pole-confirm-help');if(help)help.hidden=false;return}
