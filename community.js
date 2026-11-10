@@ -153,7 +153,7 @@ function render(){
     '<h3>'+escapeHTML(p.title)+'</h3>'+
     '<div class="community-chips">'+keyChips(p)+'</div>'+
     (p.type==='tournament'&&p.date?'<p class="community-competition">🏆 Начало: '+escapeHTML(p.date)+(d.end_date?' · Окончание: '+escapeHTML(d.end_date):'')+'</p>':d.purpose==='tournament'&&d.tournament_name?'<p class="community-competition">🏆 '+escapeHTML(d.tournament_name)+(d.tournament_date?' · с '+escapeHTML(d.tournament_date):'')+'</p>':'')+
-    '<p class="community-post-summary">'+escapeHTML(p.description||'')+'</p>'+
+    (p.description?.trim()?'<p class="community-post-summary">'+escapeHTML(p.description)+'</p>':'')+
     '<details class="community-post-extra"><summary>Подробнее об объявлении</summary><div class="post-details">'+detailsLabel(p)+'</div></details>'+
     (url?'<a class="community-contact-button" href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">'+cta+' · '+(p.contact_platform==='telegram'?'Telegram':'ВКонтакте')+'</a>':'<p class="notice">Контакт автора не указан.</p>')+
     (ownsPost(p)?'<div class="community-own-actions"><button type="button" class="secondary" data-post-edit="'+escapeHTML(p.id)+'">✎ Редактировать</button><button type="button" class="secondary danger-text" data-post-delete="'+escapeHTML(p.id)+'">Удалить</button></div>':'')+
@@ -180,7 +180,7 @@ function newPost(type,existing=null){
  if(type==='tournament'&&!existing){document.querySelector('[data-partner="tournament"]')?.click();return}
  if(type==='player'&&user?.account_type==='team'){toast('Искать команду можно из аккаунта игрока');return}
  const demo=existing?'Изменения в объявлении будут сохранены после нажатия кнопки.':window.POLE_SUPABASE_CLIENT?'После публикации объявление увидят другие пользователи.':'Пока это локальный черновик объявления.';
- const common='<label>Дополнительная информация<textarea name="description" maxlength="2000" minlength="10" required placeholder="Уточни пожелания, особенности или условия">'+escapeHTML(type==='player'&&user?.bio?user.bio:'')+'</textarea></label>';
+ const common='<label>Дополнительная информация <span class="optional-label">(по желанию)</span><textarea name="description" maxlength="2000" placeholder="Уточни пожелания, особенности или условия, если нужно">'+escapeHTML(type==='player'&&user?.bio?user.bio:'')+'</textarea></label>';
  const userNick=escapeHTML(user?.name||'Игрок');
  let extra='';
  if(type==='player'){
@@ -226,7 +226,7 @@ function newPost(type,existing=null){
  '<section class="community-form-section"><h3>Объявление</h3>'+
  input('Заголовок','title',type==='player'?'Ищу футбольную команду':type==='team'?'Команде нужны игроки':'Открыта регистрация на турнир','required maxlength="100" minlength="2"')+
  input('Город','city',user?.city||'','required maxlength="80" minlength="2"')+'</section>'+
- extra+'<section class="community-form-section"><h3>Остальное</h3>'+common+'</section>'+
+ extra+'<section class="community-form-section"><h3>Дополнительно</h3>'+common+'</section>'+
  contactFields()+'<p class="form-validation-message" role="alert" id="community-post-message"></p><button class="primary post-submit" type="submit">'+(existing?'Сохранить изменения':'Опубликовать объявление')+'</button></form>');
  const form=document.querySelector('#community-post-form');
  if(existing){
