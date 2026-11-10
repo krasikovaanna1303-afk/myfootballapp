@@ -32,7 +32,7 @@ const errorNotice=(e,where='общая база')=>{
 const clearError=where=>{if(backendErrors.delete(where))updateBackendStatus()};
 const auth=async()=>{const {data,error}=await sb.auth.getUser();if(error||!data?.user){toast('Войди в аккаунт для этого действия');document.querySelector('#account')?.click();return null}return data.user};
 let currentUid=null,loading=false,lastFeedback=[];
-const toGame=(g,people)=>({id:g.id,fieldId:g.field_id,field:g.field_name,title:g.title,date:g.game_date,time:g.game_time?.slice(0,5)||'',capacity:g.capacity,description:g.description,creator:g.creator_id,organizer:g.organizer,attendees:people.filter(p=>p.game_id===g.id).map(p=>p.user_id)});
+const toGame=(g,people)=>({id:g.id,fieldId:g.field_id,field:g.field_name,title:g.title,date:g.game_date,time:g.game_time?.slice(0,5)||'',capacity:g.capacity,description:g.description,creator:g.creator_id,organizer:g.organizer,city:g.city||'',game_format:g.game_format||null,skill_level:g.skill_level||null,participant_group:g.participant_group||null,age_group:g.age_group||null,fee_amount:g.fee_amount??null,attendees:people.filter(p=>p.game_id===g.id).map(p=>p.user_id)});
 async function refreshGames(){
  if(loading)return;loading=true;
  try{
@@ -104,7 +104,9 @@ async function saveGame(form){
  const fieldId=String(selected?.id||d.fieldId||'').trim();
  if(!fieldId){toast('Выбери площадку из каталога');return}
  if(d.unlimited!=='on'&&(!Number.isInteger(Number(d.capacity))||Number(d.capacity)<2||Number(d.capacity)>100)){toast('Укажи количество игроков от 2 до 100 или выбери «Без ограничений»');return}
- const payload={creator_id:u.id,field_id:fieldId,field_name:selected?.name||d.field,title:d.title.trim(),game_date:d.date,game_time:d.time,capacity:d.unlimited==='on'?null:Number(d.capacity),description:d.description||'',organizer:user?.name||u.user_metadata?.nickname||'Игрок'};
+ if(!d.city?.trim()||!d.game_format||!d.skill_level||!d.participant_group||!d.age_group)throw new Error('Укажи город, формат, уровень, категорию и возраст игры.');
+ if(d.fee_amount!==''&&(!/^\d+$/.test(d.fee_amount)||Number(d.fee_amount)>100000))throw new Error('Взнос должен быть целым числом от 0 до 100 000 ₽.');
+ const payload={creator_id:u.id,field_id:fieldId,field_name:selected?.name||d.field,title:d.title.trim(),game_date:d.date,game_time:d.time,capacity:d.unlimited==='on'?null:Number(d.capacity),description:d.description||'',organizer:user?.name||u.user_metadata?.nickname||'Игрок',city:d.city.trim(),game_format:d.game_format,skill_level:d.skill_level,participant_group:d.participant_group,age_group:d.age_group,fee_amount:d.fee_amount===''?null:Number(d.fee_amount)};
  const {data,error}=await sb.from('pole_games').insert(payload).select('id').single();
  if(error)throw error;
  const joined=await sb.rpc('pole_join_game',{p_game:data.id});
