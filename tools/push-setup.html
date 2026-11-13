@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>ПОЛЕ · подготовка фоновых push</title>
+ <style>
+  body{margin:0;padding:30px 16px;background:#f6f7f1;color:#163023;font:15px/1.6 system-ui,Arial}
+  main{max-width:720px;margin:auto;background:white;border-radius:20px;padding:24px;box-shadow:0 10px 35px #122e1c13}
+  h1{font-size:28px;line-height:1.2;margin:0 0 10px}h2{font-size:18px;margin-top:26px}
+  button{border:0;border-radius:10px;padding:12px 16px;background:#c9f269;color:#15291e;font-weight:800;cursor:pointer}
+  button.secondary{border:1px solid #ccd9c7;background:white;margin-left:6px}
+  textarea{display:block;width:100%;min-height:94px;box-sizing:border-box;resize:vertical;overflow-wrap:anywhere;border:1px solid #d5e1d1;border-radius:10px;padding:12px;margin:12px 0;font:12px/1.5 ui-monospace,monospace}
+  p,li{color:#526658}small{display:block;color:#667969;margin:6px 0}.danger{color:#8a3e34;font-weight:700}
+ </style>
+</head>
+<body><main>
+ <h1>⚽ ПОЛЕ · ключи для фоновых push</h1>
+ <p>Этот инструмент создаёт ключи прямо в твоём браузере. Он не отправляет их в интернет и нигде не сохраняет.</p>
+ <p class="danger">Внимание: не выкладывай полученные значения на GitHub и никому их не пересылай. Вставляй их только в Secrets своего проекта Supabase.</p>
+ <h2>1. Ключи VAPID</h2>
+ <button id="generate-vapid">Сгенерировать VAPID-ключи</button>
+ <button class="secondary" id="copy-vapid" disabled>Копировать</button>
+ <textarea readonly id="vapid" aria-label="VAPID secret" placeholder="Здесь появится JSON для секрета POLE_VAPID_JWKS"></textarea>
+ <small>Supabase → Edge Functions → Secrets → имя <b>POLE_VAPID_JWKS</b>, значение — весь JSON.</small>
+ <h2>2. Секрет для Database Webhook</h2>
+ <button id="generate-webhook">Сгенерировать секрет</button>
+ <button class="secondary" id="copy-webhook" disabled>Копировать</button>
+ <textarea readonly id="webhook" aria-label="Webhook secret" placeholder="Здесь появится значение POLE_WEBHOOK_SECRET"></textarea>
+ <small>Используй одно и то же значение для секрета <b>POLE_WEBHOOK_SECRET</b> в Supabase и HTTP-заголовка <b>x-pole-webhook-secret</b> у Database Webhook.</small>
+ <p id="state" role="status"></p>
+ <p><a href="../">Вернуться в ПОЛЕ</a></p>
+ </main>
+ <script>
+ const $=id=>document.getElementById(id);
+ const toBase64Url=bytes=>btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+ $('generate-vapid').addEventListener('click',async()=>{
+  try{
+   const pair=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+   $('vapid').value=JSON.stringify({publicKey:await crypto.subtle.exportKey('jwk',pair.publicKey),privateKey:await crypto.subtle.exportKey('jwk',pair.privateKey)});
+   $('copy-vapid').disabled=false;
+   $('state').textContent='VAPID-ключи созданы. Сохрани JSON в Secrets до закрытия страницы.';
+  }catch{$('state').textContent='Не удалось создать ключи: используй современный браузер по HTTPS.'}
+ });
+ $('generate-webhook').addEventListener('click',()=>{
+  $('webhook').value=toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+  $('copy-webhook').disabled=false;
+  $('state').textContent='Секрет webhook создан.';
+ });
+ for(const kind of ['vapid','webhook'])$('copy-'+kind).addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText($(kind).value);$('state').textContent='Скопировано.'}
+  catch{$('state').textContent='Не удалось скопировать автоматически. Выдели значение вручную.'}
+ });
+ </script>
+</body></html>

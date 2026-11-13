@@ -19,6 +19,7 @@ header.insertBefore(bell,account);header.insertBefore(inbox,account);
 
 let uid=null,items=[],seen=new Set(),ready=false,feedBusy=false,channel=null;
 let activeThread=null,chatPoll=null,chatBusy=false,chatFingerprint='';
+let pushLinkHandled=false;
 const show=(title,html)=>{if(dialog?.open)dialog.close();modal(title,html)};
 const friendlyError=e=>{
  const msg=e?.message||'Попробуй ещё раз позже.';
@@ -35,6 +36,7 @@ const requireLogin=async()=>{
  return me;
 };
 const browserPref=()=>!!uid&&localStorage.getItem('pole_browser_notify_'+uid)==='1';
+const pushState=()=>window.POLE_PUSH_STATUS?.()||null;
 function renderBell(){
  const count=items.filter(n=>!n.is_read).length;
  bell.innerHTML='🔔 <span class="pole-notice-caption">Уведомления</span>'+
@@ -47,9 +49,10 @@ function stopChat(){
 }
 dialog?.addEventListener('close',()=>{if(!dialog.open)stopChat()});
 function browserNotice(item){
+ if(pushState()?.enabled)return; // Service Worker доставит системное уведомление сам.
  if(!browserPref()||!document.hidden||!('Notification' in window)||Notification.permission!=='granted')return;
  try{
-  const notice=new Notification(item.title,{body:item.body||'Открой ПОЛЕ, чтобы посмотреть.',tag:'pole-'+item.id,icon:'icon-192.png'});
+  const notice=new Notification(item.title,{body:item.body||'Открой ПОЛЕ, чтобы посмотреть.',tag:'pole-'+item.id,icon:'pole-icon.svg'});
   notice.onclick=()=>{window.focus();openNotices();notice.close()};
  }catch(e){console.warn('ПОЛЕ: уведомление браузера не показано',e)}
 }
@@ -87,11 +90,15 @@ function renderNotices(){
 }
 function openNotices(){
  if(!uid){account.click();return}
+ const push=pushState();
  show('Мои уведомления',
   '<div class="pole-notice-tools"><button type="button" class="secondary" id="pole-read-all">Прочитать всё</button>'+
   '<button type="button" class="secondary" id="pole-browser-toggle">'+
-  (browserPref()?'🔕 Отключить уведомления браузера':'🔔 Включить уведомления браузера')+'</button></div>'+
-  '<p class="notice">Оповещения браузера показываются, пока сайт открыт. События сохраняются в личном кабинете, даже когда вкладка закрыта.</p>'+
+  (push?(push.enabled?'🔕 Отключить фоновые push':'🔔 Включить фоновые push'):
+   (browserPref()?'🔕 Отключить уведомления браузера':'🔔 Включить уведомления браузера'))+'</button></div>'+
+  '<p class="notice">'+(push?.supported?
+   'Фоновые push могут приходить даже при закрытом сайте после включения на этом устройстве. На iPhone добавь ПОЛЕ на экран «Домой».':
+   'События сохраняются в личном кабинете; этот браузер может не поддерживать фоновые уведомления.')+'</p>'+
   '<div id="pole-notification-list" class="pole-notification-list"></div>');
  renderNotices();refreshNotices();
 }
@@ -240,14 +247,15 @@ document.addEventListener('click',async event=>{
    if(error)throw error;
    items=items.map(n=>({...n,is_read:true}));renderBell();renderNotices();
   }else if(el.id==='pole-browser-toggle'){
-   if(browserPref())localStorage.removeItem('pole_browser_notify_'+uid);
+   if(window.POLE_PUSH_TOGGLE){await window.POLE_PUSH_TOGGLE();openNotices()}
+   else if(browserPref())localStorage.removeItem('pole_browser_notify_'+uid);
    else if(!('Notification' in window))toast('Браузер не поддерживает системные уведомления.');
    else{
     const permission=await Notification.requestPermission();
     if(permission==='granted')localStorage.setItem('pole_browser_notify_'+uid,'1');
     else toast('Уведомления браузера не разрешены. Их можно включить в настройках браузера.');
    }
-   openNotices();
+   if(!window.POLE_PUSH_TOGGLE)openNotices();
   }
  }catch(e){console.warn('ПОЛЕ: ошибка уведомлений / сообщений',e);toast(friendlyError(e))}
  finally{if(el.isConnected)el.disabled=false}
@@ -279,6 +287,16 @@ async function setUser(next){
  if(!next)return;
  await refreshNotices();
  if(uid!==next)return;
+ const requestedId=new URLSearchParams(window.location.search).get('notice');
+ if(!pushLinkHandled&&requestedId&&/^[0-9a-f-]{36}$/i.test(requestedId)){
+  pushLinkHandled=true;
+  try{
+   if(items.some(n=>n.id===requestedId))await activateNotice(requestedId);
+   else openNotices();
+  }catch(error){console.warn('ПОЛЕ: не удалось открыть push',error);openNotices()}
+  const clean=new URL(window.location.href);clean.searchParams.delete('notice');
+  window.history.replaceState(null,'',clean.href);
+ }
  channel=sb.channel('pole-personal-notices-'+next).on('postgres_changes',{
   event:'INSERT',schema:'public',table:'pole_notifications',filter:'recipient_id=eq.'+next
  },()=>refreshNotices()).subscribe();

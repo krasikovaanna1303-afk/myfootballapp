@@ -405,7 +405,7 @@ function showAccountProfile(){
    '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Редактировать анкету</button><button type="button" class="secondary" data-pole-account-security>🔐 Почта и пароль</button><button type="button" class="secondary" data-pole-open-notifications>🔔 Уведомления</button><button type="button" class="secondary" id="pole-logout">Выйти</button></div>');
  document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
  document.querySelector('#pole-change-photo').onclick=()=>{editAccountProfile();const chooser=document.querySelector('#pole-photo-input');chooser?.scrollIntoView({block:'center'});chooser?.click()};
- document.querySelector('#pole-logout').onclick=async()=>{await sb.auth.signOut();user=null;save();account.textContent='Войти';document.querySelector('#modal').close();toast('Ты вышел(а) из аккаунта')};
+ document.querySelector('#pole-logout').onclick=async()=>{await window.POLE_PUSH_BEFORE_LOGOUT?.();await sb.auth.signOut();user=null;save();account.textContent='Войти';document.querySelector('#modal').close();toast('Ты вышел(а) из аккаунта')};
 }
 function editAccountProfile(){
  if(!user||!sb)return;
