@@ -2,6 +2,8 @@
 (() => {
 'use strict';
 const seed = (window.POLE_SEED_FIELDS || []).map(f => ({...f, sourceVerified:!!f.source, access:f.access || (f.paid===true?'paid':'unknown')}));
+// Capture recovery links before Supabase Auth consumes the URL fragment.
+window.POLE_RECOVERY_LINK = /(?:[?#&])type=recovery(?:[&#]|$)/.test(window.location.href);
 const config = window.POLE_SUPABASE || {};
 const backend = !!(config.url && config.anonKey && window.supabase?.createClient);
 const sb = backend ? window.supabase.createClient(config.url, config.anonKey) : null;
@@ -400,7 +402,7 @@ function showAccountProfile(){
   '<div class="account-detail-grid">'+accountItem('Форматы',POLE_FORMAT_LABEL(user))+(isTeam?'':accountItem('Поездки',user.trips?'Интересны':'Не интересны'))+'</div>'+
   (user.bio?'<div class="account-about"><strong>О себе</strong><p>'+E(user.bio)+'</p></div>':'')+
   '<p class="account-privacy-note">'+(isTeam?'Логотип добавляется по желанию.':'Фото добавляется по желанию.')+' Электронная почта остаётся скрытой.</p>'+
-  '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Редактировать анкету</button><button type="button" class="secondary" id="pole-logout">Выйти</button></div>');
+   '<div class="account-actions"><button type="button" class="primary" id="pole-edit-profile">✎ Редактировать анкету</button><button type="button" class="secondary" data-pole-account-security>🔐 Почта и пароль</button><button type="button" class="secondary" data-pole-open-notifications>🔔 Уведомления</button><button type="button" class="secondary" id="pole-logout">Выйти</button></div>');
  document.querySelector('#pole-edit-profile').onclick=editAccountProfile;
  document.querySelector('#pole-change-photo').onclick=()=>{editAccountProfile();const chooser=document.querySelector('#pole-photo-input');chooser?.scrollIntoView({block:'center'});chooser?.click()};
  document.querySelector('#pole-logout').onclick=async()=>{await sb.auth.signOut();user=null;save();account.textContent='Войти';document.querySelector('#modal').close();toast('Ты вышел(а) из аккаунта')};
@@ -433,7 +435,8 @@ function authAccount(mode='login'){
   '<label>Электронная почта<input name="email" type="email" autocomplete="email" required></label>'+
   '<label>Пароль'+(signup?' (минимум 8 символов)':'')+'<input type="password" name="password" autocomplete="'+(signup?'new-password':'current-password')+'" '+(signup?'minlength="8" ':'')+'required></label>'+
   (signup?'<div data-signup-section="player">'+playerFormBits({})+'</div><div data-signup-section="team" hidden>'+teamFormBits({})+'</div><p class="notice" id="pole-signup-photo-note">Фото профиля можно добавить позже в личном кабинете.</p>':'')+
-  '<p class="form-validation-message" role="alert"></p><button class="primary" type="submit" style="margin-top:16px">'+(signup?'Зарегистрироваться':'Войти')+'</button></form>'+
+   '<p class="form-validation-message" role="alert"></p><button class="primary" type="submit" style="margin-top:16px">'+(signup?'Зарегистрироваться':'Войти')+'</button></form>'+
+   (signup?'':'<p class="auth-recovery-link"><button type="button" class="secondary" data-pole-forgot-password>Забыли пароль?</button></p>')+
   '<p id="pole-confirm-help" hidden><button type="button" class="secondary" id="pole-resend-confirmation">Отправить письмо подтверждения повторно</button></p>');
  document.querySelector('#switch-login').onclick=()=>authAccount('login');
  document.querySelector('#switch-signup').onclick=()=>authAccount('signup');
