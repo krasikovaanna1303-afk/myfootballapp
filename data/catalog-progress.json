@@ -1,5 +1,5 @@
 {
-  "next_index": 48,
+  "next_index": 62,
   "checked": {
     "Санкт-Петербург": {
       "time": "2026-11-18T10:18:09+00:00",
@@ -230,70 +230,67 @@
       "server": "https://overpass.private.coffee/api/interpreter"
     },
     "Сыктывкар": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "features": 82,
-      "server": "https://overpass.private.coffee/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "error": "The read operation timed out"
     },
     "Вологда": {
-      "time": "2026-11-15T09:35:06+00:00",
+      "time": "2026-11-22T09:53:20+00:00",
       "features": 125,
       "server": "https://overpass-api.de/api/interpreter"
     },
     "Смоленск": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "features": 93,
-      "server": "https://overpass-api.de/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "error": "The read operation timed out"
     },
     "Брянск": {
-      "time": "2026-11-15T09:35:06+00:00",
+      "time": "2026-11-22T09:53:20+00:00",
       "error": "The read operation timed out"
     },
     "Кострома": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "error": "The read operation timed out"
+      "time": "2026-11-22T09:53:20+00:00",
+      "features": 106,
+      "server": "https://overpass-api.de/api/interpreter"
     },
     "Владимир": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "features": 223,
-      "server": "https://overpass-api.de/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "error": "The read operation timed out"
     },
     "Калуга": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "features": 193,
-      "server": "https://overpass-api.de/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "error": "The read operation timed out"
     },
     "Орёл": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "features": 114,
-      "server": "https://overpass-api.de/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "error": "The read operation timed out"
     },
     "Саранск": {
-      "time": "2026-11-15T09:35:06+00:00",
+      "time": "2026-11-22T09:53:20+00:00",
       "features": 81,
       "server": "https://overpass-api.de/api/interpreter"
     },
     "Йошкар-Ола": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "features": 87,
-      "server": "https://overpass-api.de/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "features": 84,
+      "server": "https://overpass.private.coffee/api/interpreter"
     },
     "Набережные Челны": {
-      "time": "2026-11-15T09:35:06+00:00",
+      "time": "2026-11-22T09:53:20+00:00",
       "features": 280,
       "server": "https://overpass-api.de/api/interpreter"
     },
     "Магнитогорск": {
-      "time": "2026-11-15T09:35:06+00:00",
-      "error": "The read operation timed out"
+      "time": "2026-11-22T09:53:20+00:00",
+      "features": 88,
+      "server": "https://overpass-api.de/api/interpreter"
     },
     "Нальчик": {
-      "time": "2026-11-16T09:53:00+00:00",
+      "time": "2026-11-22T09:53:20+00:00",
       "error": "The read operation timed out"
     },
     "Грозный": {
-      "time": "2026-11-16T09:53:00+00:00",
-      "features": 48,
-      "server": "https://overpass.kumi.systems/api/interpreter"
+      "time": "2026-11-22T09:53:20+00:00",
+      "features": 53,
+      "server": "https://overpass-api.de/api/interpreter"
     },
     "Владикавказ": {
       "time": "2026-11-16T09:53:00+00:00",
